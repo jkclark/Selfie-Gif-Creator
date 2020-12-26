@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 '''
 We need to do the following for each image:
     1. Get the date
@@ -26,15 +27,16 @@ from wand.image import Image as WandImage  # Depends on ImageMagick
 import whatimage
 
 
-def _get_image_original_date(path: str):
-    '''Return the date that an HEIC image was created.
+def _get_image_original_date(path: str) -> str:
+    '''Return the date that an HEIC image was created as a string.
 
     Taken from https://stackoverflow.com/a/56946294/3801865.
     '''
     with open(path, 'rb') as image_bytes:
         image_contents = image_bytes.read()
 
-    fmt = whatimage.identify_image(image_contents) if fmt in ['heic', 'avif']:
+    fmt = whatimage.identify_image(image_contents)
+    if fmt in ['heic', 'avif']:
         # https://github.com/carsales/pyheif#the-heiffile-object
         heif_file = pyheif.read_heif(image_contents)
 
@@ -45,7 +47,7 @@ def _get_image_original_date(path: str):
                 fstream = io.BytesIO(metadata['data'][6:])
 
         if 'EXIF DateTimeOriginal' in (tags := exifread.process_file(fstream)):
-            return tags['EXIF DateTimeOriginal']
+            return str(tags['EXIF DateTimeOriginal'])
 
     return ''
 
@@ -71,7 +73,7 @@ def _overlay_image_with_text(path: str, text: str):
         (0, 0),
         text,
         (255,255,255),
-        font=ImageFont.truetype("/Users/joshclark/Desktop/open-sans/OpenSans-Regular.ttf", 400)
+        font=ImageFont.truetype("OpenSans-Regular.ttf", 400)
     )
     image.save(path)
 
@@ -85,7 +87,7 @@ def main():
 
         # Get the date
         date = datetime.strptime(
-            str(_get_image_original_date(IMAGE_PATH)),
+            _get_image_original_date(IMAGE_PATH),
             '%Y:%m:%d %H:%M:%S'
         )
 
