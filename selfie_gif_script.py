@@ -59,6 +59,7 @@ def _convert_heic_to_jpeg(input_path: str, output_path: str):
     '''
     with WandImage(filename=input_path) as original:
         original.format = 'jpeg'
+        original.thumbnail(600, 800)  # Resize because iPhone XR originals are huge
         original.save(filename=output_path)
 
 
@@ -67,15 +68,34 @@ def _overlay_image_with_text(path: str, text: str):
 
     Taken from https://stackoverflow.com/a/16377244/3801865.
     '''
+    # TODO: This image should probably be closed, right?
     image = Image.open(path)
     draw = ImageDraw.Draw(image)
     draw.text(
-        (0, 0),
+        (25, 0),
         text,
-        (255,255,255),
-        font=ImageFont.truetype("OpenSans-Regular.ttf", 400)
+        'white',
+        font=ImageFont.truetype("OpenSans-Regular.ttf", 100),
+        stroke_fill='black',
+        stroke_width=2,
     )
     image.save(path)
+
+def _create_gif(input_path: str, output_path: str):
+    '''Create a gif from all images in a directory.'''
+    # TODO: These images should probably be closed, right?
+    images = [
+        Image.open(os.path.join(input_path, filename))
+        for filename in sorted(os.listdir(input_path))
+    ]
+
+    images[0].save(
+        output_path,
+        save_all=True,
+        append_images=images[1:],
+        duration=200,
+        loop=0,
+    )
 
 
 def main():
@@ -92,13 +112,13 @@ def main():
         )
 
         # Convert image to JPEG
-        JPEG_PATH = date.strftime('%Y_%m_%d') + '.jpeg'
+        JPEG_PATH = 'jpegs/' + date.strftime('%Y_%m_%d') + '.jpeg'
         _convert_heic_to_jpeg(IMAGE_PATH, JPEG_PATH)
 
         # Overlay JPEG with date
         _overlay_image_with_text(JPEG_PATH, date.strftime('%m/%d/%Y'))
 
-    # TODO: Make the GIF
+    _create_gif('jpegs', 'selfies.gif')
 
 
 if __name__ == "__main__":
