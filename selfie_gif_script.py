@@ -15,6 +15,9 @@ Then:
 Questions:
     1. Can we create a gif from a gif and an/some image(s)?
         If so, we don't need to save any images on S3, only the GIF.
+
+Ideas:
+    1. Can we use threading to make this faster?
 '''
 from datetime import datetime
 import exifread
@@ -68,7 +71,7 @@ def _overlay_image_with_text(path: str, text: str):
 
     Taken from https://stackoverflow.com/a/16377244/3801865.
     '''
-    # TODO: This image should probably be closed, right?
+    # NOTE: This image should probably be closed, right?
     image = Image.open(path)
     draw = ImageDraw.Draw(image)
     draw.text(
@@ -83,7 +86,7 @@ def _overlay_image_with_text(path: str, text: str):
 
 def _create_gif(input_path: str, output_path: str):
     '''Create a gif from all images in a directory.'''
-    # TODO: These images should probably be closed, right?
+    # NOTE: These images should probably be closed, right?
     images = [
         Image.open(os.path.join(input_path, filename))
         for filename in sorted(os.listdir(input_path))
@@ -93,7 +96,7 @@ def _create_gif(input_path: str, output_path: str):
         output_path,
         save_all=True,
         append_images=images[1:],
-        duration=200,
+        duration=100,
         loop=0,
     )
 
@@ -103,6 +106,7 @@ def main():
     IMAGE_FOLDER = sys.argv[1]
 
     for filename in os.listdir(IMAGE_FOLDER):
+        # TODO: Handle non-image files, non-HEIC files, etc.
         IMAGE_PATH = os.path.join(IMAGE_FOLDER, filename)
 
         # Get the date
