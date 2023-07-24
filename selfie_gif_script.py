@@ -1,24 +1,3 @@
-#!/usr/local/bin/python3
-"""
-We need to do the following for each image:
-    1. Get the date
-    2. Convert to JPEG
-    3. Overlay date on top of picture
-    4. Save picture to S3 ? (question 1)
-
-The images to be processed should be listed from an S3 bucket.
-
-Then:
-    1. Re-create GIF from all other images and new images
-    2. Upload GIF to S3
-
-Questions:
-    1. Can we create a gif from a gif and an/some image(s)?
-        If so, we don't need to save any images on S3, only the GIF.
-
-Ideas:
-    1. Can we use threading to make this faster?
-"""
 from datetime import datetime
 import io
 import os
