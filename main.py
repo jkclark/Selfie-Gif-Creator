@@ -1,3 +1,4 @@
+"""Convert a list of images to a movie, with the date overlaid on each image."""
 from datetime import datetime
 import io
 import os
