@@ -1,4 +1,4 @@
-# Selfie Gif Creator (actually .mov)
+# Selfie Movie Maker
 
 ### Overview
 

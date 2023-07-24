@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "selfie-gif-creator"
+name = "selfie-movie-maker"
 version = "0.1.0"
 description = ""
 authors = ["Josh Clark"]
 readme = "README.md"
-packages = [{include = "selfie_gif_creator"}]
+packages = [{include = "selfie_movie_maker"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -13,7 +13,6 @@ exifread = "^3.0.0"
 pillow = "^10.0.0"
 wand = "^0.6.11"
 whatimage = "^0.0.3"
-
 
 [build-system]
 requires = ["poetry-core"]
