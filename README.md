@@ -15,12 +15,12 @@ Right now, it works like this:
    2. Convert image to JPEG
    3. Overlay image with data
    4. Save image to JPEG directory with sequential name
-2. Create .mov via `ffmpeg` using JPEGs
+2. Create .mp4 via `ffmpeg` using JPEGs
 
 It's a PITA because I have to get all the .HEIC
 originals in my Finder somewhere on my Mac. This means exporting them from the Photos app, which fails half the time, etc., etc.
 
-The current goal is to update the .mov daily, when I take the picture. My prevailing idea is to upload the photo from my phone to an S3 bucket, which will trigger a Lambda function to create a new .mov, replacing the old one. Then the movie will always be up to date.
+The current goal is to update the .mp4 daily, when I take the picture. My prevailing idea is to upload the photo from my phone to an S3 bucket, which will trigger a Lambda function to create a new .mp4, replacing the old one. Then the movie will always be up to date.
 
 ### Local setup
 
