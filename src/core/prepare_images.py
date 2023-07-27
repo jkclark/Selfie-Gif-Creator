@@ -32,7 +32,8 @@ def prepare_images(
         - Images will be prepared in sorted order.
         - All images must be of the same format.
     """
-    # TODO: Confirm output dir exists?
+    if not os.path.isdir(output_path):
+        raise FileNotFoundError(f"Output path does not exist: {output_path}")
 
     # Get all images to be prepared
     images = sorted(listdir_no_hidden(input_path))
