@@ -103,6 +103,15 @@ def _create_video(input_path: str, output_path: str):
     )
 
 
+def append_image_to_movie(image_path: str, movie_path: str):
+    # TODO: Replace single quotes with double
+    # TODO: Make line shorter
+    os.system(
+        # f'ffmpeg -i {movie_path} -loop 1 -t 3 -i {image_path} -f lavfi -t 3 -i anullsrc -filter_complex "[0:v] [0:a] [1:v] [2:a] concat=n=2:v=1:a=1 [v] [a]" -c:v libx264 -c:a aac -strict -2 -map "[v]" -map "[a]" output.mp4'
+        f'ffmpeg -i {movie_path} -loop 1 -t 3 -i {image_path} -f lavfi -t 3 -i anullsrc -filter_complex "[0:v] [1:v] concat=n=2:v=1 [v]" -c:v libx264 -strict -2 -map "[v]" output.mkv'
+    )
+
+
 def main():
     IMAGE_FOLDER = sys.argv[1]
 
@@ -141,3 +150,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # append_image_to_movie("jpegs/0004.jpeg", "movie.mp4")

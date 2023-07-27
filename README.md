@@ -38,6 +38,12 @@ Try to install:
 
 ### TODO
 
+- Put font file somewhere accessible
+- Add pylint/mypy/auto import sorting/etc
+- Add git commit hooks
+- Docstrings everywhere
+- Move decorator to outside class?
+
 - Add arguments for heic/jpeg input folder/output file name via argparse
 - Figure out how to append one image to an existing movie
 - Clean up all the script
@@ -45,3 +51,4 @@ Try to install:
 - Figure out how to send a photo from my phone to S3
 - Figure out how to trigger Lambda function upon S3 upload
 - Investigate programmatically centering my face
+- Investigate benefits of threading when preparing 1000's of images

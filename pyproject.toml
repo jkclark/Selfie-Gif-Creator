@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Josh Clark"]
 readme = "README.md"
-packages = [{include = "selfie_movie_maker"}]
+packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -13,6 +13,8 @@ exifread = "^3.0.0"
 pillow = "^10.0.0"
 wand = "^0.6.11"
 whatimage = "^0.0.3"
+pylint = "^2.17.5"
+pillow-heif = "^0.12.0"
 
 [build-system]
 requires = ["poetry-core"]
