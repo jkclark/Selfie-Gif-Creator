@@ -45,8 +45,6 @@ Try to install:
 - Move decorator to outside class?
 
 - Add arguments for heic/jpeg input folder/output file name via argparse
-- Figure out how to append one image to an existing movie
-- Clean up all the script
 - Convert whole thing to AWS Lambda function
 - Figure out how to send a photo from my phone to S3
 - Figure out how to trigger Lambda function upon S3 upload

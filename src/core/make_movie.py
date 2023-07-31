@@ -13,14 +13,14 @@ def make_movie_from_scratch(
     video_processor.create_movie_from_images(images_path, output_path)
 
 
-def add_image_to_movie(
-    image_path: str,
+def add_images_to_movie(
+    images_path: str,
     movie_path: str,
     video_processor: Type[VideoProcessor],
     output_path: str = "",
 ) -> None:
-    """Append an image to a movie."""
+    """Append any number of images to a movie."""
     if output_path == "":
         output_path = movie_path
 
-    video_processor.append_image_to_movie(image_path, movie_path, output_path)
+    video_processor.append_images_to_movie(images_path, movie_path, output_path)

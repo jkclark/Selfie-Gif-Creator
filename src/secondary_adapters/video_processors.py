@@ -1,6 +1,8 @@
 """TODO"""
 from abc import ABC, abstractmethod
-import os
+from pathlib import Path
+import subprocess
+from tempfile import NamedTemporaryFile
 
 
 class VideoProcessor(ABC):
@@ -14,8 +16,10 @@ class VideoProcessor(ABC):
 
     @staticmethod
     @abstractmethod
-    def append_image_to_movie(
-        image_path: str, movie_path: str, output_path: str = ""
+    def append_images_to_movie(
+        images_path: str,
+        movie_path: str,
+        output_path: str,
     ) -> None:
         """TODO"""
         raise NotImplementedError
@@ -32,83 +36,87 @@ class FFmpegVP(VideoProcessor):
 
     @staticmethod
     def create_movie_from_images(images_path: str, output_path: str) -> None:
-        """TODO"""
-        os.system(
-            " ".join(
-                (
-                    "ffmpeg",
-                    f"-r {FFmpegVP.FRAMERATE}",
-                    "-f image2",
-                    "-s 600x800",
-                    "-pattern_type glob",
-                    f'-i "{images_path}/*.jpeg"',
-                    "-vcodec libx264",
-                    "-crf 25",
-                    f"{output_path}",
-                )
-            )
+        """TODO
+
+        NOTE: In order to specify just a folder (and not a glob pattern),
+              the ffmpeg command below already includes "*.jpeg". This means
+              we'd have to change this command to use a different extension.
+
+        TODO: Explain ffmpeg options used here
+        """
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-r",
+                f"{FFmpegVP.FRAMERATE}",
+                "-f",
+                "image2",
+                "-s",
+                "600x800",
+                "-pattern_type",
+                "glob",
+                "-i",
+                f"{images_path}/*.jpeg",
+                "-vcodec",
+                "libx264",
+                "-crf",
+                "25",
+                f"{output_path}",
+            ],
+            check=True,
         )
 
     @staticmethod
-    def append_image_to_movie(
-        image_path: str,
+    def append_images_to_movie(
+        images_path: str,
         movie_path: str,
         output_path: str,
     ) -> None:
-        """TODO
+        """Add any number of images to the end of a movie.
 
-        This ffmpeg command is taken from this answer:
-        https://video.stackexchange.com/a/17229
+        The original idea was to use a command like the one found here:
+        https://video.stackexchange.com/a/17229, but it turns out that there
+        were issues with the video's duration using this method. This method now
+        instead uses the concat demuxer to concatenate two separate movies
+        together. The first movie is the original movie, and the second movie is
+        a movie that is created from the images that are to be appended.
 
-        As noted in the comments in the answer (and verified by me),
-        ffmpeg will run forever if the output given is .mp4. So,
-        we create the new movie as an mkv file and then convert it to mp4.
+        NOTE: It would seem that the two movies *must* be in the same directory
+              in order for this to work.
+
+        TODO: Explain ffmpeg options used here
         """
-        # TODO: Convert this to a real logger.warning call
-        if not output_path.endswith(".mp4"):
-            print("WARNING: output will be an mp4 file")
+        # Get the folder where the movie is located (required for ffmpeg concat)
+        movie_folder = Path(movie_path).parent
 
-        output_path_no_extension = FFmpegVP._get_filename_without_extension(output_path)
+        # Create a movie from the images to be appended
+        FFmpegVP.create_movie_from_images(
+            images_path,
+            f"{movie_folder}/temp.mp4",
+        )
 
-        os.system(
-            " ".join(
-                (
-                    f"ffmpeg -i {movie_path}",
-                    f"-loop 1 -t 3 -i {image_path}",
-                    "-f lavfi -t 3 -i anullsrc",
-                    "-filter_complex '[0:v] [1:v] concat=n=2:v=1 [v]'",
-                    "-c:v libx264 -strict -2 -map '[v]'",
-                    f"{output_path_no_extension + '.mkv'}",
-                )
+        # Create temporary file to store ffmpeg concat instructions
+        with NamedTemporaryFile() as temp_file:
+            temp_file.write(
+                f"file {movie_path}\nfile {movie_folder}/temp.mp4".encode("utf-8")
             )
-        )
 
-        FFmpegVP._convert_mkv_to_mp4(output_path_no_extension)
+            # Reset the file pointer to the beginning of the file
+            temp_file.seek(0)
 
-        # Remove the mkv file
-        os.remove(output_path_no_extension + ".mkv")
-
-    @staticmethod
-    def _get_filename_without_extension(path: str) -> str:
-        """TODO
-
-        Taken from this answer:
-        https://stackoverflow.com/a/678242/3801865
-        """
-        return os.path.splitext(path)[0]
-
-    @staticmethod
-    def _convert_mkv_to_mp4(input_path_no_extension: str) -> None:
-        """TODO
-
-        This ffmpeg command is taken from the same answer as above:
-        https://video.stackexchange.com/a/17229
-        """
-        # TODO: This produces a video that plays correctly but the
-        #       duration is not correct. This needs to be fixed.
-        # IDEA: Maybe we can create a movie out of the one frame,
-        #       and then append it to the original movie, instead of
-        #       trying to append the frame directly to the original movie.
-        os.system(
-            f"ffmpeg -i {input_path_no_extension + '.mkv'} -codec copy {input_path_no_extension + '.mp4'}"
-        )
+            # Concatenate the two movies
+            subprocess.run(
+                [
+                    "ffmpeg",
+                    "-f",
+                    "concat",
+                    "-safe",
+                    "0",
+                    "-i",
+                    f"{temp_file.name}",
+                    "-c",
+                    "copy",
+                    f"{output_path}",
+                ],
+                check=True,
+            )
