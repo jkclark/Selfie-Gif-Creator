@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 
 .DS_Store
-images_to_prep/*
-jpegs/*
-selfies.gif
+heics/*
+prod_jpegs/*
+work/*
