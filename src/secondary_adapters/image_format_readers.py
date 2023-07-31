@@ -10,6 +10,7 @@ class ImageFormatReader(ABC):
     @staticmethod
     @abstractmethod
     def get_image_format(image_contents: bytes) -> str:
+        """TODO"""
         raise NotImplementedError
 
 

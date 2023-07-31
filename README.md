@@ -43,6 +43,7 @@ Try to install:
 - Add git commit hooks
 - Docstrings everywhere
 - Move decorator to outside class?
+- Tests for everything
 
 - Add arguments for heic/jpeg input folder/output file name via argparse
 - Convert whole thing to AWS Lambda function
