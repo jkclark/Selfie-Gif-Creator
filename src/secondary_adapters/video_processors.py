@@ -1,4 +1,5 @@
 """TODO"""
+import os
 import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -96,8 +97,14 @@ class FFmpegVP(VideoProcessor):
               should check if output_path is the same as movie_path or if it is
               omitted.
         """
-        # Get the folder where the movie is located (required for ffmpeg concat)
-        temp_movie_path = Path(movie_path).parent / "temp.mp4"
+        # Get the directory where all movies are/will be stored
+        movie_dir = Path(movie_path).parent
+
+        # Get the folder where the base movie is located
+        temp_movie_path = movie_dir / "temp_new_images.mp4"
+
+        # Name of the temporary output file before it is renamed to output_path
+        temp_output_path = movie_dir / "temp_concat_output.mp4"
 
         # Create a movie from the images to be appended
         FFmpegVP.create_movie_from_images(
@@ -126,10 +133,13 @@ class FFmpegVP(VideoProcessor):
                     f"{temp_file.name}",
                     "-c",
                     "copy",
-                    f"{output_path}",
+                    f"{temp_output_path}",
                 ],
                 check=True,
             )
 
         # Delete the temporary movie
         temp_movie_path.unlink()
+
+        # Move the output to the desired location
+        os.replace(temp_output_path, output_path or movie_path)
