@@ -6,7 +6,6 @@ from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from pillow_heif import register_heif_opener
 
-
 register_heif_opener()
 
 
@@ -80,7 +79,7 @@ class PillowImageManipulator(ImageManipulator):
     @ImageManipulator.assert_opened
     def write_text_on_image(self, text: str, x_coord: int, y_coord: int):
         """TODO"""
-        # TODO: Figure out better path for font file
+        # TODO: Use environment variable for font path
         font_size = 100
         draw = ImageDraw.Draw(self._image)
         draw.text(

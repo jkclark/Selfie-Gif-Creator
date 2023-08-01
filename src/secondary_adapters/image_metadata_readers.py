@@ -1,7 +1,7 @@
 """TODO"""
+import io
 from abc import ABC, abstractmethod
 from datetime import datetime
-import io
 
 import exifread
 import pyheif

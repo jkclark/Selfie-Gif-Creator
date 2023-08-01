@@ -1,6 +1,6 @@
 """TODO"""
-from io import BytesIO
 import os
+from io import BytesIO
 from typing import Generator, Type
 
 from src.secondary_adapters.image_format_readers import ImageFormatReader, WhatImageIFR
@@ -9,10 +9,9 @@ from src.secondary_adapters.image_manipulators import (
     PillowImageManipulator,
 )
 from src.secondary_adapters.image_metadata_readers import (
-    ImageMetadataReader,
     HEICMetadataReader,
+    ImageMetadataReader,
 )
-
 
 RESIZE_WIDTH = 600
 RESIZE_HEIGHT = 800

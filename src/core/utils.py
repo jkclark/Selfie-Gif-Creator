@@ -1,7 +1,6 @@
 """TODO"""
-from pathlib import Path
 import shutil
-
+from pathlib import Path
 
 TMP_DIR = "/tmp/selfie-movie-maker"
 

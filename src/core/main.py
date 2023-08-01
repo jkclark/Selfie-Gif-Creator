@@ -4,12 +4,8 @@ from typing import Type
 from src.core.make_movie import append_images_to_movie, make_movie_from_scratch
 from src.core.prepare_images import prepare_images
 from src.core.utils import TMP_DIR, use_tmp_dir
-from src.secondary_adapters.image_format_readers import (
-    ImageFormatReader,
-)
-from src.secondary_adapters.image_manipulators import (
-    ImageManipulator,
-)
+from src.secondary_adapters.image_format_readers import ImageFormatReader
+from src.secondary_adapters.image_manipulators import ImageManipulator
 from src.secondary_adapters.video_processors import VideoProcessor
 
 
