@@ -51,6 +51,7 @@ Try to install:
 - Convert whole thing to AWS Lambda function
 - Figure out how to send a photo from my phone to S3
 - Figure out how to trigger Lambda function upon S3 upload
+    - https://docs.aws.amazon.com/lambda/latest/dg/with-s3-tutorial.html#with-s3-tutorial-create-execution-role
 - Investigate programmatically centering my face
 - Investigate benefits of threading when preparing 1000's of images
   - Won't be necessary if just adding one image at a time
