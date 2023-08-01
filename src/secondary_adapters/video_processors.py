@@ -38,6 +38,8 @@ class FFmpegVP(VideoProcessor):
     def create_movie_from_images(images_path: str, output_path: str) -> None:
         """TODO
 
+        output_path should specify .mp4
+
         NOTE: In order to specify just a folder (and not a glob pattern),
               the ffmpeg command below already includes "*.jpeg". This means
               we'd have to change this command to use a different extension.
@@ -85,6 +87,14 @@ class FFmpegVP(VideoProcessor):
               in order for this to work.
 
         TODO: Explain ffmpeg options used here
+
+        TODO: Overwriting the original movie using only FFmpeg does not work. It
+              seems that it is trying to overwrite the roiginal movie while it is
+              still being used by the concat demuxer. This is why we have to use
+              a temporary file to store the concat instructions. Confirmed by this
+              answer: https://stackoverflow.com/a/28877452/3801865. This function
+              should check if output_path is the same as movie_path or if it is
+              omitted.
         """
         # Get the folder where the movie is located (required for ffmpeg concat)
         temp_movie_path = Path(movie_path).parent / "temp.mp4"
