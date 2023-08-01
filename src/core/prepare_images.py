@@ -51,6 +51,7 @@ def prepare_images(
 
     # Prepare each image
     for image_index, image in enumerate(images):
+        # TODO: Add logger/trace here to show progress
         with open(os.path.join(input_path, image), "rb") as image_fp:
             image_contents = image_fp.read()
 

@@ -44,6 +44,7 @@ Try to install:
 - Docstrings everywhere
 - Move decorator to outside class?
 - Tests for everything
+- Telemetry via OpenTelemetry
 
 - Check format/date _before_ doing anything else, guaranteeing correct image order
 - Add arguments for heic/jpeg input folder/output file name via argparse
