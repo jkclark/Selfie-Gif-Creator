@@ -87,18 +87,18 @@ class FFmpegVP(VideoProcessor):
         TODO: Explain ffmpeg options used here
         """
         # Get the folder where the movie is located (required for ffmpeg concat)
-        movie_folder = Path(movie_path).parent
+        temp_movie_path = Path(movie_path).parent / "temp.mp4"
 
         # Create a movie from the images to be appended
         FFmpegVP.create_movie_from_images(
             images_path,
-            f"{movie_folder}/temp.mp4",
+            temp_movie_path,
         )
 
         # Create temporary file to store ffmpeg concat instructions
         with NamedTemporaryFile() as temp_file:
             temp_file.write(
-                f"file {movie_path}\nfile {movie_folder}/temp.mp4".encode("utf-8")
+                f"file '{movie_path}'\nfile {temp_movie_path}".encode("utf-8")
             )
 
             # Reset the file pointer to the beginning of the file
@@ -120,3 +120,6 @@ class FFmpegVP(VideoProcessor):
                 ],
                 check=True,
             )
+
+        # Delete the temporary movie
+        temp_movie_path.unlink()

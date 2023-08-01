@@ -13,7 +13,7 @@ def make_movie_from_scratch(
     video_processor.create_movie_from_images(images_path, output_path)
 
 
-def add_images_to_movie(
+def append_images_to_movie(
     images_path: str,
     movie_path: str,
     video_processor: Type[VideoProcessor],
