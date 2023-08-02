@@ -1,18 +1,14 @@
 """TODO"""
 import shutil
+from contextlib import contextmanager
 from pathlib import Path
 
-TMP_DIR = "/tmp/selfie-movie-maker"
 
+@contextmanager
+def use_tmp_dir(dir_path: str):
+    """Make a temporary directory for the duration of the block."""
+    Path(dir_path).mkdir()
 
-def use_tmp_dir(inner_func):
-    """Make a temporary directory for the duration of the function."""
+    yield
 
-    def wrapper(*args, **kwargs):
-        Path(TMP_DIR).mkdir()
-
-        inner_func(*args, **kwargs)
-
-        shutil.rmtree(TMP_DIR)
-
-    return wrapper
+    shutil.rmtree(dir_path)
