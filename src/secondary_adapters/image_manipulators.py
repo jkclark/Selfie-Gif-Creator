@@ -1,10 +1,13 @@
 """TODO"""
+import os
 from abc import ABC
 from dataclasses import dataclass
 from io import BytesIO
 
 from PIL import Image, ImageDraw, ImageFont
 from pillow_heif import register_heif_opener
+
+from src.core.constants import FONT_PATH_ENV_VAR
 
 register_heif_opener()
 
@@ -86,7 +89,7 @@ class PillowImageManipulator(ImageManipulator):
             (x_coord, y_coord),
             text,
             font=ImageFont.truetype(
-                "/Users/joshclark/Documents/selfie-movie-maker/OpenSans-Regular.ttf",
+                os.environ[FONT_PATH_ENV_VAR],
                 font_size,
             ),
             stroke_fill="black",
