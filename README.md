@@ -54,3 +54,7 @@ Try to install:
 - Investigate programmatically centering my face
 - Investigate benefits of threading when preparing 1000's of images
   - Won't be necessary if just adding one image at a time
+
+### Other thoughts
+
+- In trying to abstract away everything except the real base logic, I feel like I've still left the file system as a dependency of the core logic. Is there away to abstract away even that? For example, could we read and write everything froma nd to a database? It would seem that with `ffmpeg` at least, we are locked into using the filesystem. But maybe that's not true...?
