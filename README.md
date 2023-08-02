@@ -51,6 +51,8 @@ Try to install:
 - Convert whole thing to AWS Lambda function
 - Figure out how to send a photo from my phone to S3
 - Figure out how to trigger Lambda function upon S3 upload
+    - https://docs.aws.amazon.com/lambda/latest/dg/with-s3-tutorial.html#with-s3-tutorial-create-execution-role
+    - https://aws.amazon.com/fr/blogs/media/processing-user-generated-content-using-aws-lambda-and-ffmpeg/: This similar tutorial demonstrates doing something similar, but without using Lambda's /tmp storage, but instead keeping everything in memory. Based on the code I've written at this point, this seems like it might just work without changes. The advantage is that Lambda's memory can be configured to be much greater than the space in /tmp. It is potentially faster, too. I think as a first go-round it's worth sticking to /tmp. After that's working, I don't think it should be too much work to change the driver code to use this approach.
 - Investigate programmatically centering my face
 - Investigate benefits of threading when preparing 1000's of images
   - Won't be necessary if just adding one image at a time
