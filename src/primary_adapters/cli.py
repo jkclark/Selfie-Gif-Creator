@@ -1,22 +1,4 @@
-"""TODO
-
-Summary of both modes:
-- Make movie from scratch
-    - Steps
-        - Prepare images
-        - Concatenate together into movie
-    - Args
-        - Input directory for images
-        - Output path for movie
-- Append image to movie
-    - Steps
-        - Prepare image
-        - Append to movie
-    - Args
-        - Input path to image
-        - Input path to movie
-        - Output path for new movie (potentially overwrite)
-"""
+"""TODO"""
 import argparse
 
 from src.core.prepare_images_and_make_movie import (
@@ -34,7 +16,10 @@ APPEND_MODE = "append"
 def parse_args():
     """TODO"""
     parser = argparse.ArgumentParser()
+
+    # Create subparsers
     subparsers = parser.add_subparsers(
+        title="modes",
         help=f"'{CREATE_MODE}' a movie from scratch or '{APPEND_MODE}' to a movie",
         dest="mode",
     )
@@ -50,6 +35,10 @@ def parse_args():
         "output_path",
         help="path to location where movie will be saved",
     )
+    create_parser.add_argument(
+        "font_path",
+        help="path to font file for writing text on images",
+    )
 
     # Subparser for "append"
     append_parser = subparsers.add_parser(APPEND_MODE)
@@ -60,6 +49,12 @@ def parse_args():
         "movie_path",
         help="path to movie to which images will be appended",
     )
+    append_parser.add_argument(
+        "font_path",
+        help="path to font file for writing text on images",
+    )
+    # NOTE: Same as "create" above. Couldn't find a simple way to make this
+    #       behave without repeating myself like this.
     append_parser.add_argument(
         "--output_path",
         help="path to location to save new movie -- if omitted, original movie will be overwritten",
@@ -75,6 +70,9 @@ def main():
     image_format_reader = WhatImageIFR
     image_manipulator = PillowImageManipulator
     video_processor = FFmpegVP
+
+    # Set font path
+    image_manipulator.font_path = args.font_path
 
     if args.mode == CREATE_MODE:
         prepare_images_and_make_movie(

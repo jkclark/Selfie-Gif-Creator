@@ -1,23 +1,23 @@
 """TODO"""
-import os
 from abc import ABC
-from dataclasses import dataclass
 from io import BytesIO
 
 from PIL import Image, ImageDraw, ImageFont
 from pillow_heif import register_heif_opener
 
-from src.core.constants import FONT_PATH_ENV_VAR
-
 register_heif_opener()
 
 
-@dataclass
 class ImageManipulator(ABC):
     """TODO"""
 
-    image_contents: BytesIO
-    opened: bool = False
+    # This must be set before instantiating the class
+    font_path = ""
+
+    def __init__(self, image_contents: BytesIO):
+        """TODO"""
+        self.image_contents = image_contents
+        self.opened = False
 
     def __enter__(self):
         """TODO"""
@@ -46,6 +46,11 @@ class ImageManipulator(ABC):
     @assert_opened
     def write_text_on_image(self, text: str, x_coord: int, y_coord: int):
         """TODO"""
+        # NOTE: This check is duplicated -- subclasses write the same code.
+        #       How can we have this code in one place?
+        if not self.font_path:
+            raise ImageManipulatorFontPathNotSetError()
+
         raise NotImplementedError
 
     @assert_opened
@@ -82,14 +87,16 @@ class PillowImageManipulator(ImageManipulator):
     @ImageManipulator.assert_opened
     def write_text_on_image(self, text: str, x_coord: int, y_coord: int):
         """TODO"""
-        # TODO: Use environment variable for font path
+        if not self.font_path:
+            raise ImageManipulatorFontPathNotSetError()
+
         font_size = 100
         draw = ImageDraw.Draw(self._image)
         draw.text(
             (x_coord, y_coord),
             text,
             font=ImageFont.truetype(
-                os.environ[FONT_PATH_ENV_VAR],
+                self.font_path,
                 font_size,
             ),
             stroke_fill="black",
@@ -109,6 +116,14 @@ class ImageManipulatorNotOpenedError(Exception):
     def __init__(self):
         """TODO"""
         super().__init__("ImageManipulator not opened")
+
+
+class ImageManipulatorFontPathNotSetError(Exception):
+    """TODO"""
+
+    def __init__(self):
+        """TODO"""
+        super().__init__("ImageManipulator.font_path not set")
 
 
 if __name__ == "__main__":

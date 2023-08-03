@@ -25,7 +25,7 @@ The current goal is to update the .mp4 daily, when I take the picture. My prevai
 ### Local setup
 
 - Normal `poetry` setup process
-- `poetry self add poetry-dotenv-plugin` to get `.env` files to work
+- ~~`poetry self add poetry-dotenv-plugin` to get `.env` files to work~~ No longer using .env files locally
 - Need `ffmpeg` installed locally
 - [This answer](https://stackoverflow.com/a/67076373/3801865) helped me with an error when installing `pyheif`
 - [This answer](https://stackoverflow.com/a/41772062/3801865) helped me with the following error:
