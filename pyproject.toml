@@ -13,8 +13,10 @@ exifread = "^3.0.0"
 pillow = "^10.0.0"
 wand = "^0.6.11"
 whatimage = "^0.0.3"
-pylint = "^2.17.5"
 pillow-heif = "^0.12.0"
+
+[tool.poetry.dev-dependencies]
+pylint = "^2.17.5"
 isort = "^5.12.0"
 
 [build-system]

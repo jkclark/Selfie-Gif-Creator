@@ -56,6 +56,9 @@ Try to install:
 - Investigate programmatically centering my face
 - Investigate benefits of threading when preparing 1000's of images
   - Won't be necessary if just adding one image at a time
+- Look into Dockerizing this application
+  - It seems like this would bring the local-development and AWS Lambda environments closer together
+  - Plus this would give me a good reason to work with Docker more
 
 ### Other thoughts
 
