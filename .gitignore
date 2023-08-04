@@ -129,6 +129,4 @@ dmypy.json
 .pyre/
 
 .DS_Store
-heics/*
-prod_jpegs/*
-work/*
+work/
