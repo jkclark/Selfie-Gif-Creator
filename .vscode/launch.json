@@ -10,7 +10,7 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
     },
     {
       "name": "CLI create",
@@ -25,7 +25,24 @@
         "${workspaceFolder}/OpenSans-Regular.ttf" // font_path
       ],
       "console": "integratedTerminal",
-      "justMyCode": true
-    }
+      "justMyCode": true,
+    },
+    {
+      "name": "CLI append",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/primary_adapters/cli.py",
+      "args": [
+        "append", // mode
+        "${workspaceFolder}/work/heics_2", // image_path
+        "${workspaceFolder}/work/temp_images", // temp_folder
+        "${workspaceFolder}/work/movies/create_output.mp4", // movie_path
+        "${workspaceFolder}/OpenSans-Regular.ttf", // font_path
+        "--output_path",
+        "${workspaceFolder}/work/movies/append_output.mp4",
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true,
+    },
   ]
 }
