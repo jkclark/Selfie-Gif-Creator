@@ -19,9 +19,9 @@
       "program": "${workspaceFolder}/src/primary_adapters/cli.py",
       "args": [
         "create", // mode
-        "${workspaceFolder}/work/heics", // image_path
+        "${workspaceFolder}/work/heics_1", // image_path
         "${workspaceFolder}/work/temp_images", // temp_folder
-        "${workspaceFolder}/work/movies/output_movie.mp4", // output_path
+        "${workspaceFolder}/work/movies/create_output.mp4", // output_path
         "${workspaceFolder}/OpenSans-Regular.ttf" // font_path
       ],
       "console": "integratedTerminal",
