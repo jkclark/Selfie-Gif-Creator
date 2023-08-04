@@ -1,16 +1,31 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Python: Current File",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": true
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "CLI create",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/primary_adapters/cli.py",
+      "args": [
+        "create", // mode
+        "${workspaceFolder}/work/heics", // image_path
+        "${workspaceFolder}/work/temp_images", // temp_folder
+        "${workspaceFolder}/work/movies/output_movie.mp4", // output_path
+        "${workspaceFolder}/OpenSans-Regular.ttf" // font_path
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
 }
