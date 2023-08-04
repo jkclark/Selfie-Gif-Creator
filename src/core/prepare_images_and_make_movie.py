@@ -8,25 +8,24 @@ from src.secondary_adapters.image_format_readers import ImageFormatReader
 from src.secondary_adapters.image_manipulators import ImageManipulator
 from src.secondary_adapters.video_processors import VideoProcessor
 
-# TODO: Make this an environment variable
-TMP_DIR = "/tmp/selfie-movie-maker"
-
 
 def prepare_images_and_make_movie(
     input_path: str,
+    temp_folder: str,
     output_path: str,
     image_format_reader: Type[ImageFormatReader],
     image_manipulator: Type[ImageManipulator],
     video_processor: Type[VideoProcessor],
 ) -> None:
     """TODO"""
-    with use_tmp_dir(TMP_DIR):
-        prepare_images(input_path, TMP_DIR, image_format_reader, image_manipulator)
-        make_movie_from_scratch(TMP_DIR, output_path, video_processor)
+    with use_tmp_dir(temp_folder):
+        prepare_images(input_path, temp_folder, image_format_reader, image_manipulator)
+        make_movie_from_scratch(temp_folder, output_path, video_processor)
 
 
 def prepare_images_and_append_to_movie(
     images_path: str,
+    temp_folder: str,
     movie_path: str,
     image_format_reader: Type[ImageFormatReader],
     image_manipulator: Type[ImageManipulator],
@@ -37,10 +36,10 @@ def prepare_images_and_append_to_movie(
 
     NOTE: This will prepare every file in the images_path.
     """
-    with use_tmp_dir(TMP_DIR):
-        prepare_images(images_path, TMP_DIR, image_format_reader, image_manipulator)
+    with use_tmp_dir(temp_folder):
+        prepare_images(images_path, temp_folder, image_format_reader, image_manipulator)
         append_images_to_movie(
-            TMP_DIR,
+            temp_folder,
             movie_path,
             video_processor,
             output_path if output_path else movie_path,

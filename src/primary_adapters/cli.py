@@ -32,6 +32,10 @@ def parse_args():
         help="path to images to be included in the movie",
     )
     create_parser.add_argument(
+        "temp_folder",
+        help="path to temporary folder where images will be stored -- created if it doesn't exist",
+    )
+    create_parser.add_argument(
         "output_path",
         help="path to location where movie will be saved",
     )
@@ -41,9 +45,15 @@ def parse_args():
     )
 
     # Subparser for "append"
+    # NOTE: Two of the following args are the same as "create" above. Couldn't find
+    #       a simple way to make this behave without repeating myself like this.
     append_parser = subparsers.add_parser(APPEND_MODE)
     append_parser.add_argument(
         "image_path", help="path to directory containing images to append to movie"
+    )
+    append_parser.add_argument(
+        "temp_folder",
+        help="path to temporary folder where images will be stored -- created if it doesn't exist",
     )
     append_parser.add_argument(
         "movie_path",
@@ -53,8 +63,6 @@ def parse_args():
         "font_path",
         help="path to font file for writing text on images",
     )
-    # NOTE: Same as "create" above. Couldn't find a simple way to make this
-    #       behave without repeating myself like this.
     append_parser.add_argument(
         "--output_path",
         help="path to location to save new movie -- if omitted, original movie will be overwritten",
@@ -77,6 +85,7 @@ def main():
     if args.mode == CREATE_MODE:
         prepare_images_and_make_movie(
             args.image_path,
+            args.temp_folder,
             args.output_path,
             image_format_reader,
             image_manipulator,
@@ -85,6 +94,7 @@ def main():
     elif args.mode == APPEND_MODE:
         prepare_images_and_append_to_movie(
             args.image_path,
+            args.temp_folder,
             args.movie_path,
             image_format_reader,
             image_manipulator,
