@@ -15,19 +15,6 @@ COPY poetry.lock pyproject.toml ${LAMBDA_TASK_ROOT}/
 RUN poetry config virtualenvs.create false \
   && poetry install --no-dev --no-interaction --no-ansi
 
-### Just for test ###
-# Font file
-COPY ./OpenSans-Regular.ttf /tmp/OpenSans-Regular.ttf
-
-# Input image
-RUN mkdir /tmp/selfie-movie-maker-input-images
-COPY ./work/heics/test_image.HEIC /tmp/selfie-movie-maker-input-images/IMG_2129.HEIC
-
-# Input movie
-COPY ./work/movies/selfie_movie.mp4 /tmp/input_movie.mp4
-
-#####################
-
 # Copy code
 COPY ./src ${LAMBDA_TASK_ROOT}/src
 

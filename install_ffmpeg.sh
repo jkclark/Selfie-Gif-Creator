@@ -12,8 +12,5 @@ yum install xz -y
 yum install tar -y
 tar -xf ffmpeg-release-amd64-static.tar.xz 
 
-# Don't really understand the point of this
-# cp -a /usr/local/bin/ffmpeg/ffmpeg-6.0-amd64-static/ . /usr/local/bin/ffmpeg/
-
 # Create symlink for global use
 ln -s /usr/local/bin/ffmpeg/ffmpeg-6.0-amd64-static/ffmpeg /usr/bin/ffmpeg
