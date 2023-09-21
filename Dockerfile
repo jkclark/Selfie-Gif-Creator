@@ -5,6 +5,8 @@ COPY ./install_ffmpeg.sh /tmp/install_ffmpeg.sh
 RUN chmod +x /tmp/install_ffmpeg.sh
 RUN /tmp/install_ffmpeg.sh
 
+# NOTE: This is tied to the poetry-core version in pyproject.toml
+#       Don't change this without changing that
 ENV POETRY_VERSION=1.5.1
 
 RUN pip install "poetry==$POETRY_VERSION"

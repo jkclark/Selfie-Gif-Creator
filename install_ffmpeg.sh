@@ -3,7 +3,6 @@ cd /usr/local/bin
 mkdir ffmpeg && cd ffmpeg
 
 # Download static build of ffmpeg
-# TODO: Can I ADD this instead of installing it here?
 yum install wget -y
 wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
 
