@@ -14,10 +14,15 @@ Process for manually uploading .zip as Lambda function:
 3. `zip -gr deployment.zip src/*`
 4. Upload to AWS
 
+Pillow layer Python 3.10 Paris ARN: arn:aws:lambda:eu-west-3:770693421928:layer:Klayers-p310-Pillow:3
+
 TODO list for getting this fully set up:
-- Write "meat" of the Lambda function (i.e., the code that actually does the work)
-- Add ffmpeg layer to Lambda function
-- Fix whatever problems ensue
+- Resolve: Unable to import module 'src.primary_adapters.lambda_function': No module named '_pillow_heif'
+    - Current theory is that when the Lambda function looks to import
+    pillow_heif, somehow the fact that the Pillow layer is separate from the
+    Lambda function means that it can't find the module.
+    - I don't really see why that would be the case. Maybe there's just a
+    problem with the dependencies zip that I uploaded...?
 """
 import json
 import os
@@ -26,7 +31,11 @@ from urllib.parse import unquote_plus
 
 import boto3
 
+from src.core.prepare_images_and_make_movie import prepare_images_and_append_to_movie
 from src.core.utils import use_tmp_dir
+from src.secondary_adapters.image_format_readers import WhatImageIFR
+from src.secondary_adapters.image_manipulators import PillowImageManipulator
+from src.secondary_adapters.video_processors import FFmpegVP
 
 s3_client = boto3.client("s3")
 
@@ -54,10 +63,24 @@ def lambda_handler(event, context):
     # Create dir for input image(s)
     with use_tmp_dir(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR]):
         # Download everything we need from S3
-        download_s3_inputs(event["Records"], os.environ[S3_AUX_BUCKET_ENV_VAR])
+        # download_s3_inputs(event["Records"], os.environ[S3_AUX_BUCKET_ENV_VAR])
+
+        # Set image manipulator font path
+        PillowImageManipulator.font_path = os.environ[FONT_FILE_PATH_ENV_VAR]
 
         # Prepare images & append image(s) to movie
-        # TODO
+        # TODO: Handle multiple images
+        prepare_images_and_append_to_movie(
+            Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR]),
+            # TODO: This unquote call is duplicated
+            # / unquote_plus(event["Records"][0]["s3"]["object"]["key"]).replace("/", ""),
+            # / "IMG_2129.HEIC",
+            os.environ[TEMP_FOLDER_PATH_ENV_VAR],
+            os.environ[MOVIE_PATH_ENV_VAR],
+            WhatImageIFR,
+            PillowImageManipulator,
+            FFmpegVP,
+        )
 
     # Upload new movie to S3
     s3_client.upload_file(
