@@ -1,29 +1,4 @@
-"""AWS Lambda function for processing new images and appending them to a movie.
-
-Specificities of the Lambda function configuration:
-- Runtime: Python 3.10
-- Handler: src.secondary_adapters.lambda_function.lambda_handler
-- Environment variables:
-    - All of the ..._ENV_VAR variables defined below
-    - PYTHONPATH: `/var/task/src:/var/task:/opt/python/lib/python3.10/site-packages:/opt/python:/var/runtime:/var/lang/lib/python310.zip:/var/lang/lib/python3.10:/var/lang/lib/python3.10/lib-dynload:/var/lang/lib/python3.10/site-packages:/opt/python/lib/python3.10/site-packages`
-        - This is necessary for the Lambda function to see our `src` folder
-
-Process for manually uploading .zip as Lambda function:
-1. (From project root) `cd ./.venv/lib/python3.10/site-packages && zip -r ../../../../deployment.zip .`
-2. `cd ../../../..`
-3. `zip -gr deployment.zip src/*`
-4. Upload to AWS
-
-Pillow layer Python 3.10 Paris ARN: arn:aws:lambda:eu-west-3:770693421928:layer:Klayers-p310-Pillow:3
-
-TODO list for getting this fully set up:
-- Resolve: Unable to import module 'src.primary_adapters.lambda_function': No module named '_pillow_heif'
-    - Current theory is that when the Lambda function looks to import
-    pillow_heif, somehow the fact that the Pillow layer is separate from the
-    Lambda function means that it can't find the module.
-    - I don't really see why that would be the case. Maybe there's just a
-    problem with the dependencies zip that I uploaded...?
-"""
+"""AWS Lambda function for processing new images and appending them to a movie."""
 import json
 import os
 from pathlib import Path
