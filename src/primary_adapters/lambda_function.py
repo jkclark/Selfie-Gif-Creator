@@ -38,18 +38,16 @@ def lambda_handler(event, context):
     # Create dir for input image(s)
     with use_tmp_dir(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR]):
         # Download everything we need from S3
-        # download_s3_inputs(event["Records"], os.environ[S3_AUX_BUCKET_ENV_VAR])
+        download_s3_inputs(event["Records"], os.environ[S3_AUX_BUCKET_ENV_VAR])
 
         # Set image manipulator font path
         PillowImageManipulator.font_path = os.environ[FONT_FILE_PATH_ENV_VAR]
 
         # Prepare images & append image(s) to movie
-        # TODO: Handle multiple images
         prepare_images_and_append_to_movie(
-            Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR]),
+            Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
             # TODO: This unquote call is duplicated
-            # / unquote_plus(event["Records"][0]["s3"]["object"]["key"]).replace("/", ""),
-            # / "IMG_2129.HEIC",
+            / unquote_plus(event["Records"][0]["s3"]["object"]["key"]).replace("/", ""),
             os.environ[TEMP_FOLDER_PATH_ENV_VAR],
             os.environ[MOVIE_PATH_ENV_VAR],
             WhatImageIFR,
@@ -65,7 +63,6 @@ def lambda_handler(event, context):
     )
 
     # Delete input image from S3
-    # TODO: Handle multiple images
     s3_client.delete_object(
         Bucket=event["Records"][0]["s3"]["bucket"]["name"],
         Key=event["Records"][0]["s3"]["object"]["key"],
@@ -77,12 +74,11 @@ def lambda_handler(event, context):
 def download_s3_inputs(records, aux_bucket: str):
     """Download input images, font, and movie from S3."""
     # Get the S3 bucket/key
-    record = records[0]  # TODO: Handle multiple images
+    record = records[0]
     input_bucket = record["s3"]["bucket"]["name"]
     image_key = unquote_plus(record["s3"]["object"]["key"]).replace("/", "")
 
     # Download new image(s) from input bucket
-    # TODO: Handle multiple images
     s3_client.download_file(
         input_bucket,
         image_key,
