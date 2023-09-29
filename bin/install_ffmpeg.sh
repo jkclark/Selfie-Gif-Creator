@@ -1,4 +1,7 @@
 #!/bin/sh
+# This script is used to install FFmpeg on the AWS Lambda Python image.
+# It is called as part of the build process (see Dockerfile).
+
 cd /usr/local/bin
 mkdir ffmpeg && cd ffmpeg
 

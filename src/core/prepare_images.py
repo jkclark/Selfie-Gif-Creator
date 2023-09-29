@@ -1,6 +1,7 @@
 """TODO"""
 import os
 from io import BytesIO
+from pathlib import Path
 from typing import Generator, Type
 
 from src.secondary_adapters.image_format_readers import ImageFormatReader, WhatImageIFR
@@ -31,8 +32,10 @@ def prepare_images(
         - Images will be prepared in sorted order.
         - All images must be of the same format.
     """
-    if not os.path.isdir(output_path):
-        raise FileNotFoundError(f"Output path does not exist: {output_path}")
+    if not Path(output_path).exists():
+        raise FileNotFoundError(
+            f"Prepared-image directory does not exist: {output_path}"
+        )
 
     # Get all images to be prepared
     images = sorted(listdir_no_hidden(input_path))
