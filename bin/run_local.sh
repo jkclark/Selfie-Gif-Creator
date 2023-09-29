@@ -14,7 +14,7 @@
 container_name=smm-dev-local
 
 # Set environment variables
-source ./.env
+source ./local.env
 
 # Run Docker container in the background
 docker run -d -p 9000:8080 --env-file ./.env --name $container_name smm-dev:latest
