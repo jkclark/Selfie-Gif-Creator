@@ -108,5 +108,5 @@ def upload_movie_to_s3():
 
 
 def is_dev_environment():
-    """Check if we're running locally."""
+    """Return True if this is a local environment, False otherwise."""
     return os.environ["ENV"] == "dev"
