@@ -3,7 +3,6 @@ from typing import Type
 
 from src.core.make_movie import append_images_to_movie, make_movie_from_scratch
 from src.core.prepare_images import prepare_images
-from src.core.utils import use_tmp_dir
 from src.secondary_adapters.image_format_readers import ImageFormatReader
 from src.secondary_adapters.image_manipulators import ImageManipulator
 from src.secondary_adapters.video_processors import VideoProcessor
@@ -18,9 +17,8 @@ def prepare_images_and_make_movie(
     video_processor: Type[VideoProcessor],
 ) -> None:
     """TODO"""
-    with use_tmp_dir(temp_folder):
-        prepare_images(input_path, temp_folder, image_format_reader, image_manipulator)
-        make_movie_from_scratch(temp_folder, output_path, video_processor)
+    prepare_images(input_path, temp_folder, image_format_reader, image_manipulator)
+    make_movie_from_scratch(temp_folder, output_path, video_processor)
 
 
 def prepare_images_and_append_to_movie(
@@ -36,11 +34,10 @@ def prepare_images_and_append_to_movie(
 
     NOTE: This will prepare every file in the images_path.
     """
-    with use_tmp_dir(temp_folder):
-        prepare_images(images_path, temp_folder, image_format_reader, image_manipulator)
-        append_images_to_movie(
-            temp_folder,
-            movie_path,
-            video_processor,
-            output_path if output_path else movie_path,
-        )
+    prepare_images(images_path, temp_folder, image_format_reader, image_manipulator)
+    append_images_to_movie(
+        temp_folder,
+        movie_path,
+        video_processor,
+        output_path if output_path else movie_path,
+    )
