@@ -13,7 +13,7 @@
 docker build --platform linux/amd64 -t selfie-movie-maker:latest .
 
 # Authenticate the Docker CLI to Amazon ECR registry
-aws ecr get-login-password --region $2 | docker login --username AWS --password-stdin $1.dkr.ecr.$2.amazonaws.com
+docker login -u AWS -p $(aws ecr get-login-password --region $2) $1.dkr.ecr.$2.amazonaws.com
 
 # Tag local image into Amazon ECR repository as the latest version
 docker tag selfie-movie-maker:latest $1.dkr.ecr.$2.amazonaws.com/selfie-movie-maker:latest

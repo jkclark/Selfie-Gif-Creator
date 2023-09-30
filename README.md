@@ -14,6 +14,8 @@ There are two S3 buckets configured for this project. One is an input bucket, an
 
 There shouldn't be too much "local" setup, since there is a Github Codespace set up for this project.
 
+In order to run `bin/update_ecr_and_lambda.sh`, the AWS CLI needs to be authenticated. Not yet sure how something like that is saved in the Codespace.
+
 ### Run locally
 
 1. Build the Docker image: `docker build --platform linux/amd64 -t smm-dev:latest .`
