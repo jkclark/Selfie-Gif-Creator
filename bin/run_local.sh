@@ -17,7 +17,7 @@ container_name=smm-dev-local
 source ./local.env
 
 # Run Docker container in the background
-docker run -d -p 9000:8080 --env-file ./.env --name $container_name smm-dev:latest
+docker run -d -p 9000:8080 --env-file local.env --name $container_name smm-dev:latest
 
 # Make input- and temp-image directories
 docker exec $container_name mkdir -p ${INPUT_IMAGE_FOLDER_PATH} ${TEMP_IMAGE_FOLDER_PATH}

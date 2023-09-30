@@ -1,5 +1,8 @@
 FROM public.ecr.aws/lambda/python:3.10
 
+# Copy zipped static ffmpeg binary
+COPY ./ffmpeg.tar.xz /usr/local/bin
+
 # Install ffmpeg
 COPY ./bin/install_ffmpeg.sh ${LAMBDA_TASK_ROOT}/install_ffmpeg.sh
 RUN chmod +x ${LAMBDA_TASK_ROOT}/install_ffmpeg.sh

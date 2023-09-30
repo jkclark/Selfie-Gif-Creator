@@ -12,5 +12,13 @@ There are two S3 buckets configured for this project. One is an input bucket, an
 
 ### Local setup
 
+There shouldn't be too much "local" setup, since there is a Github Codespace set up for this project.
+
+### Run locally
+
 1. Build the Docker image: `docker build --platform linux/amd64 -t smm-dev:latest .`
 2. Append an image to a movie: `./bin/run_local.sh {PATH_TO_INPUT_IMAGE} {PATH_TO_INPUT_MOVIE} {PATH_TO_OUTPUT_MOVIE}`
+
+### Other notes
+
+- `ffmpeg.tar.xz` is downloaded from https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz

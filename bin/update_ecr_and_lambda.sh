@@ -7,21 +7,19 @@
 #
 # Args:
 # $1: AWS account ID
+# $2: AWS region
 
 # Build
-docker build \
---platform linux/amd64 \
--t selfie-movie-maker:latest \
-.
+docker build --platform linux/amd64 -t selfie-movie-maker:latest .
 
 # Authenticate the Docker CLI to Amazon ECR registry
-aws ecr get-login-password --region eu-west-3 | docker login --username AWS --password-stdin $1.dkr.ecr.eu-west-3.amazonaws.com
+aws ecr get-login-password --region $2 | docker login --username AWS --password-stdin $1.dkr.ecr.$2.amazonaws.com
 
 # Tag local image into Amazon ECR repository as the latest version
-docker tag selfie-movie-maker:latest $1.dkr.ecr.eu-west-3.amazonaws.com/selfie-movie-maker:latest
+docker tag selfie-movie-maker:latest $1.dkr.ecr.$2.amazonaws.com/selfie-movie-maker:latest
 
 # Deploy local image to Amazon ECR repository
-docker push $1.dkr.ecr.eu-west-3.amazonaws.com/selfie-movie-maker:latest
+docker push $1.dkr.ecr.$2.amazonaws.com/selfie-movie-maker:latest
 
 # Update Lambda function
-aws lambda update-function-code --function-name SelfieMovierMakerUpdateDocker --image-uri $1.dkr.ecr.eu-west-3.amazonaws.com/selfie-movie-maker:latest
+aws lambda update-function-code --function-name SelfieMovierMakerUpdateDocker --image-uri $1.dkr.ecr.$2.amazonaws.com/selfie-movie-maker:latest
