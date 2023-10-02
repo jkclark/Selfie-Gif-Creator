@@ -1,12 +1,13 @@
 """TODO"""
-from typing import Type
+from pathlib import Path
+from typing import Type, Union
 
 from src.secondary_adapters.video_processors import VideoProcessor
 
 
 def make_movie_from_scratch(
-    images_path: str,
-    output_path: str,
+    images_path: Path,
+    output_path: Path,
     video_processor: Type[VideoProcessor],
 ):
     """Concatenate images into a movie."""
@@ -14,10 +15,10 @@ def make_movie_from_scratch(
 
 
 def append_images_to_movie(
-    images_path: str,
-    movie_path: str,
+    images_path: Path,
+    movie_path: Path,
     video_processor: Type[VideoProcessor],
-    output_path: str = "",
+    output_path: Union[Path, None] = None,
 ) -> None:
     """Append any number of images to a movie."""
     if output_path == "":

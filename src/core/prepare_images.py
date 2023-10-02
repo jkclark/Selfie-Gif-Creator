@@ -4,15 +4,12 @@ from io import BytesIO
 from pathlib import Path
 from typing import Generator, Type
 
-from src.secondary_adapters.image_format_readers import ImageFormatReader, WhatImageIFR
-from src.secondary_adapters.image_manipulators import (
-    ImageManipulator,
-    PillowImageManipulator,
-)
-from src.secondary_adapters.image_metadata_readers import (
-    HEICMetadataReader,
-    ImageMetadataReader,
-)
+from src.secondary_adapters.image_format_readers import (ImageFormatReader,
+                                                         WhatImageIFR)
+from src.secondary_adapters.image_manipulators import (ImageManipulator,
+                                                       PillowImageManipulator)
+from src.secondary_adapters.image_metadata_readers import (HEICMetadataReader,
+                                                           ImageMetadataReader)
 
 RESIZE_WIDTH = 600
 RESIZE_HEIGHT = 800
@@ -21,8 +18,8 @@ TEXT_Y_COORD = 0
 
 
 def prepare_images(
-    input_path: str,
-    output_path: str,
+    input_path: Path,
+    output_path: Path,
     image_format_reader: Type[ImageFormatReader],
     image_manipulator: Type[ImageManipulator],
 ) -> None:
@@ -32,7 +29,7 @@ def prepare_images(
         - Images will be prepared in sorted order.
         - All images must be of the same format.
     """
-    if not Path(output_path).exists():
+    if not output_path.exists():
         raise FileNotFoundError(
             f"Prepared-image directory does not exist: {output_path}"
         )
@@ -41,7 +38,7 @@ def prepare_images(
     images = sorted(listdir_no_hidden(input_path))
 
     # Get image format from first image
-    fmt = get_image_format(os.path.join(input_path, images[0]), image_format_reader)
+    fmt = get_image_format(input_path / images[0], image_format_reader)
 
     # Get appropriate metadata reader
     if fmt == "heic":
@@ -55,32 +52,32 @@ def prepare_images(
     # Prepare each image
     for image_index, image in enumerate(images):
         # TODO: Add logger/trace here to show progress
-        with open(os.path.join(input_path, image), "rb") as image_fp:
+        with open(input_path / image, "rb") as image_fp:
             image_contents = image_fp.read()
 
         prepare_image(
             image_contents,
-            os.path.join(output_path, f"{image_index:0{filename_length}}.jpeg"),
+            output_path / f"{image_index:0{filename_length}}.jpeg",
             metadata_reader,
             image_manipulator,
         )
 
 
-def listdir_no_hidden(path: str) -> Generator[str, None, None]:
+def listdir_no_hidden(path: Path) -> Generator[str, None, None]:
     """TODO
 
     This function was created to ignore files like .DS_Store.
     """
-    for dir_entry in os.listdir(path):
-        if not dir_entry.startswith("."):
+    for dir_entry in path.iterdir():
+        if not dir_entry.name.startswith("."):
             yield dir_entry
 
 
 def get_image_format(
-    image_path: str, image_format_reader: Type[ImageFormatReader]
+    image_path: Path, image_format_reader: Type[ImageFormatReader]
 ) -> str:
     """TODO"""
-    with open(os.path.join(image_path), "rb") as image:
+    with open(image_path, "rb") as image:
         image_contents = image.read()
 
     return image_format_reader.get_image_format(image_contents)
@@ -88,7 +85,7 @@ def get_image_format(
 
 def prepare_image(
     image_contents: bytes,
-    output_path: str,
+    output_path: Path,
     metadata_reader: Type[ImageMetadataReader],
     image_manipulator: Type[ImageManipulator],
 ) -> None:

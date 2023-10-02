@@ -6,7 +6,8 @@ from urllib.parse import unquote_plus
 
 import boto3
 
-from src.core.prepare_images_and_make_movie import prepare_images_and_append_to_movie
+from src.core.prepare_images_and_make_movie import \
+    prepare_images_and_append_to_movie
 from src.secondary_adapters.image_format_readers import WhatImageIFR
 from src.secondary_adapters.image_manipulators import PillowImageManipulator
 from src.secondary_adapters.video_processors import FFmpegVP
@@ -54,8 +55,8 @@ def lambda_handler(event, context):
     # Prepare images & append image(s) to movie
     prepare_images_and_append_to_movie(
         Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR]),
-        os.environ[TEMP_FOLDER_PATH_ENV_VAR],
-        os.environ[MOVIE_PATH_ENV_VAR],
+        Path(os.environ[TEMP_FOLDER_PATH_ENV_VAR]),
+        Path(os.environ[MOVIE_PATH_ENV_VAR]),
         WhatImageIFR,
         PillowImageManipulator,
         FFmpegVP,

@@ -1,6 +1,7 @@
 """TODO"""
 from abc import ABC
 from io import BytesIO
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 from pillow_heif import register_heif_opener
@@ -12,7 +13,7 @@ class ImageManipulator(ABC):
     """TODO"""
 
     # This must be set before instantiating the class
-    font_path = ""
+    font_path = None
 
     def __init__(self, image_contents: BytesIO):
         """TODO"""
@@ -54,7 +55,7 @@ class ImageManipulator(ABC):
         raise NotImplementedError
 
     @assert_opened
-    def save_image_as_jpeg(self, output_path: str):
+    def save_image_as_jpeg(self, output_path: Path):
         """TODO"""
         raise NotImplementedError
 
@@ -104,7 +105,7 @@ class PillowImageManipulator(ImageManipulator):
         )
 
     @ImageManipulator.assert_opened
-    def save_image_as_jpeg(self, output_path: str):
+    def save_image_as_jpeg(self, output_path: Path):
         """TODO"""
         self._image.convert("RGB")  # TODO: Is this necessary?
         self._image.save(output_path, "jpeg")
@@ -124,13 +125,3 @@ class ImageManipulatorFontPathNotSetError(Exception):
     def __init__(self):
         """TODO"""
         super().__init__("ImageManipulator.font_path not set")
-
-
-if __name__ == "__main__":
-    with open(
-        "/Users/joshclark/Documents/selfie-movie-maker/heics/IMG_0096.HEIC", "rb"
-    ) as f:
-        with PillowImageManipulator(BytesIO(f.read())) as image_manipulator:
-            image_manipulator.resize_image(600, 800)
-            image_manipulator.write_text_on_image("Hello World!", 25, 0)
-            image_manipulator.save_image_as_jpeg("test2.jpg")

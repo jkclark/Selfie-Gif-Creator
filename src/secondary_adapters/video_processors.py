@@ -11,16 +11,16 @@ class VideoProcessor(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_movie_from_images(images_path: str, output_path: str) -> None:
+    def create_movie_from_images(images_path: Path, output_path: Path) -> None:
         """TODO"""
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
     def append_images_to_movie(
-        images_path: str,
-        movie_path: str,
-        output_path: str,
+        images_path: Path,
+        movie_path: Path,
+        output_path: Path,
     ) -> None:
         """TODO"""
         raise NotImplementedError
@@ -36,7 +36,7 @@ class FFmpegVP(VideoProcessor):
     FRAMERATE = 15  # Literally, the number of images to be shown per second
 
     @staticmethod
-    def create_movie_from_images(images_path: str, output_path: str) -> None:
+    def create_movie_from_images(images_path: Path, output_path: Path) -> None:
         """TODO
 
         output_path should specify .mp4
@@ -71,9 +71,9 @@ class FFmpegVP(VideoProcessor):
 
     @staticmethod
     def append_images_to_movie(
-        images_path: str,
-        movie_path: str,
-        output_path: str,
+        images_path: Path,
+        movie_path: Path,
+        output_path: Path,
     ) -> None:
         """Add any number of images to the end of a movie.
 
@@ -98,7 +98,7 @@ class FFmpegVP(VideoProcessor):
               omitted.
         """
         # Get the directory where all movies are/will be stored
-        movie_dir = Path(movie_path).parent
+        movie_dir = movie_path.parent
 
         # Get the folder where the base movie is located
         temp_movie_path = movie_dir / "temp_new_images.mp4"
