@@ -7,7 +7,14 @@ from src.secondary_adapters.image_manipulators import ImageManipulator
 from src.secondary_adapters.image_metadata_readers import (
     HEICMetadataReader,
     ImageMetadataReader,
+    JPEGMetadataReader,
 )
+
+IMAGE_FORMAT_TO_METADATA_READER = {
+    "heic": HEICMetadataReader,
+    "jpeg": JPEGMetadataReader,
+}
+
 
 RESIZE_WIDTH = 600
 RESIZE_HEIGHT = 800
@@ -39,10 +46,10 @@ def prepare_images(
     fmt = image_format_reader.get_image_format(images[0])
 
     # Get appropriate metadata reader
-    if fmt == "heic":
-        metadata_reader = HEICMetadataReader
-    else:
-        raise UnsupportedImageFormatError(fmt)
+    try:
+        metadata_reader = IMAGE_FORMAT_TO_METADATA_READER[fmt]
+    except KeyError as key_error:
+        raise UnsupportedImageFormatError(fmt) from key_error
 
     # Get length for filename padding
     filename_length = len(str(len(images)))
