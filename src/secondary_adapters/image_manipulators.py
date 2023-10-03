@@ -2,7 +2,7 @@
 from abc import ABC
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from pillow_heif import register_heif_opener
 
 register_heif_opener()
@@ -37,6 +37,11 @@ class ImageManipulator(ABC):
             return inner_func(*args, **kwargs)
 
         return wrapper
+
+    @assert_opened
+    def transpose_image(self):
+        """Rotate the image to the correct orientation."""
+        raise NotImplementedError
 
     @assert_opened
     def resize_image(self, width: int, height: int):
@@ -78,6 +83,17 @@ class PillowImageManipulator(ImageManipulator):
         # TODO: What to do with these 3 args?
         self._image.close()
         super().__exit__(exc_type, exc_value, traceback)
+
+    @ImageManipulator.assert_opened
+    def transpose_image(self):
+        """Rotate the image to the correct orientation.
+
+        See the following for more information:
+        - Explanation of Exif/image orientation: https://jdhao.github.io/2019/07/31/image_rotation_exif_info/
+        - PIL solution suggestion: https://github.com/python-pillow/Pillow/issues/4703#issuecomment-645219973
+        - PIL.ImageOps.exif_transpose: https://pillow.readthedocs.io/en/stable/reference/ImageOps.html#PIL.ImageOps.exif_transpose
+        """
+        self._image = ImageOps.exif_transpose(self._image)
 
     @ImageManipulator.assert_opened
     def resize_image(self, width: int, height: int):
