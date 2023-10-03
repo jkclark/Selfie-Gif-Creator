@@ -6,6 +6,8 @@ from pathlib import Path
 
 import exifread
 import pyheif
+from PIL import Image
+from PIL.ExifTags import TAGS
 
 
 class ImageMetadataReader(ABC):
@@ -53,6 +55,27 @@ class HEICMetadataReader(ImageMetadataReader):
             return ImageMetadataReader.parse_and_format_date(
                 str(tags["EXIF DateTimeOriginal"]), HEICMetadataReader.DATE_INPUT_FORMAT
             )
+
+        raise DateNotFoundError
+
+
+class JPEGMetadataReader(ImageMetadataReader):
+    """A metadata reader for JPEG images."""
+
+    DATE_INPUT_FORMAT = "%Y:%m:%d %H:%M:%S"
+
+    @staticmethod
+    def get_image_date(image_path: Path) -> str:
+        with Image.open(image_path) as image:
+            exifdata = image.getexif()
+
+        for tag_id in exifdata:
+            tag = TAGS.get(tag_id, tag_id)
+            data = exifdata.get(tag_id)
+            if tag == "DateTime":
+                return ImageMetadataReader.parse_and_format_date(
+                    data, JPEGMetadataReader.DATE_INPUT_FORMAT
+                )
 
         raise DateNotFoundError
 
