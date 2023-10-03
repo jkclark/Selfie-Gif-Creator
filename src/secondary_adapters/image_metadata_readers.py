@@ -2,6 +2,7 @@
 import io
 from abc import ABC, abstractmethod
 from datetime import datetime
+from pathlib import Path
 
 import exifread
 import pyheif
@@ -14,7 +15,7 @@ class ImageMetadataReader(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_image_date(image_contents: bytes) -> str:
+    def get_image_date(image_path: Path) -> str:
         """TODO"""
         raise NotImplementedError
 
@@ -32,7 +33,10 @@ class HEICMetadataReader(ImageMetadataReader):
     DATE_INPUT_FORMAT = "%Y:%m:%d %H:%M:%S"
 
     @staticmethod
-    def get_image_date(image_contents: bytes) -> str:
+    def get_image_date(image_path: Path) -> str:
+        with open(image_path, "rb") as image_fp:
+            image_contents = image_fp.read()
+
         # https://github.com/carsales/pyheif#the-heiffile-object
         heif_file = pyheif.read_heif(image_contents)
 

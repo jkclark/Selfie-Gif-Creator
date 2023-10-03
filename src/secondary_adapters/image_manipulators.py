@@ -1,6 +1,5 @@
 """TODO"""
 from abc import ABC
-from io import BytesIO
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -15,9 +14,9 @@ class ImageManipulator(ABC):
     # This must be set before instantiating the class
     font_path = None
 
-    def __init__(self, image_contents: BytesIO):
+    def __init__(self, image_path: Path):
         """TODO"""
-        self.image_contents = image_contents
+        self.image_path = image_path
         self.opened = False
 
     def __enter__(self):
@@ -63,20 +62,20 @@ class ImageManipulator(ABC):
 class PillowImageManipulator(ImageManipulator):
     """TODO"""
 
-    def __init__(self, image_contents: BytesIO):
+    def __init__(self, image_path: Path):
         """TODO"""
-        super().__init__(image_contents)
+        super().__init__(image_path)
         self._image = None
 
     def __enter__(self):
         """TODO"""
         super().__enter__()
-        self._image = Image.open(self.image_contents)
+        self._image = Image.open(self.image_path)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         """TODO"""
-        # TODO: WHat to do with these 3 args?
+        # TODO: What to do with these 3 args?
         self._image.close()
         super().__exit__(exc_type, exc_value, traceback)
 
