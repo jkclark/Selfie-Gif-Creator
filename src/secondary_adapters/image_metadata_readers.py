@@ -13,20 +13,11 @@ from PIL.ExifTags import TAGS
 class ImageMetadataReader(ABC):
     """TODO"""
 
-    DATE_OUTPUT_FORMAT = "%m/%d/%Y"
-
     @staticmethod
     @abstractmethod
-    def get_image_date(image_path: Path) -> str:
+    def get_image_date(image_path: Path) -> datetime:
         """TODO"""
         raise NotImplementedError
-
-    @staticmethod
-    def parse_and_format_date(date: str, input_format: str) -> str:
-        """Convert date from input_format to DATE_OUTPUT_FORMAT."""
-        return datetime.strptime(date, input_format).strftime(
-            ImageMetadataReader.DATE_OUTPUT_FORMAT
-        )
 
 
 class HEICMetadataReader(ImageMetadataReader):
@@ -35,7 +26,7 @@ class HEICMetadataReader(ImageMetadataReader):
     DATE_INPUT_FORMAT = "%Y:%m:%d %H:%M:%S"
 
     @staticmethod
-    def get_image_date(image_path: Path) -> str:
+    def get_image_date(image_path: Path) -> datetime:
         with open(image_path, "rb") as image_fp:
             image_contents = image_fp.read()
 
@@ -52,7 +43,7 @@ class HEICMetadataReader(ImageMetadataReader):
 
         # Extract date
         if "EXIF DateTimeOriginal" in (tags := exifread.process_file(fstream)):
-            return ImageMetadataReader.parse_and_format_date(
+            return datetime.strptime(
                 str(tags["EXIF DateTimeOriginal"]), HEICMetadataReader.DATE_INPUT_FORMAT
             )
 
@@ -65,7 +56,7 @@ class JPEGMetadataReader(ImageMetadataReader):
     DATE_INPUT_FORMAT = "%Y:%m:%d %H:%M:%S"
 
     @staticmethod
-    def get_image_date(image_path: Path) -> str:
+    def get_image_date(image_path: Path) -> datetime:
         with Image.open(image_path) as image:
             exifdata = image.getexif()
 
@@ -73,9 +64,7 @@ class JPEGMetadataReader(ImageMetadataReader):
             tag = TAGS.get(tag_id, tag_id)
             data = exifdata.get(tag_id)
             if tag == "DateTime":
-                return ImageMetadataReader.parse_and_format_date(
-                    data, JPEGMetadataReader.DATE_INPUT_FORMAT
-                )
+                return datetime.strptime(data, JPEGMetadataReader.DATE_INPUT_FORMAT)
 
         raise DateNotFoundError
 
