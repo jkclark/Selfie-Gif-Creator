@@ -86,7 +86,7 @@ def listdir_no_hidden(path: Path) -> Generator[str, None, None]:
     This function was created to ignore files like .DS_Store.
     """
     for dir_entry in path.iterdir():
-        if not dir_entry.name.startswith("."):
+        if dir_entry.is_file() and not dir_entry.name.startswith("."):
             yield dir_entry
 
 
