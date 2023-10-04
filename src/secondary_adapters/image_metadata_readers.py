@@ -1,4 +1,4 @@
-"""TODO"""
+"""This file contains the secondary adapters for reading image metadata."""
 import io
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -11,17 +11,17 @@ from PIL.ExifTags import TAGS
 
 
 class ImageMetadataReader(ABC):
-    """TODO"""
+    """An ABC for image metadata readers."""
 
     @staticmethod
     @abstractmethod
     def get_image_date(image_path: Path) -> datetime:
-        """TODO"""
+        """Get an image's date."""
         raise NotImplementedError
 
 
 class HEICMetadataReader(ImageMetadataReader):
-    """TODO"""
+    """A metadata reader for HEIC images."""
 
     DATE_INPUT_FORMAT = "%Y:%m:%d %H:%M:%S"
 
@@ -70,8 +70,8 @@ class JPEGMetadataReader(ImageMetadataReader):
 
 
 class NoEXIFDataError(Exception):
-    """TODO"""
+    """An error raised when no EXIF data is found for an image."""
 
 
 class DateNotFoundError(Exception):
-    """TODO"""
+    """An error raised when no date is found for an image."""
