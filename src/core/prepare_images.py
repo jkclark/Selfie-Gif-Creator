@@ -89,7 +89,7 @@ def prepare_image(
     # Do image manipulation
     with image_manipulator(image_path) as manipulator:
         # Orient image correctly
-        manipulator.transpose_image()
+        manipulator.reorient_image()
 
         # Resize image
         manipulator.resize_image(RESIZE_WIDTH, RESIZE_HEIGHT)

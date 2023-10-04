@@ -39,7 +39,7 @@ class ImageManipulator(ABC):
         return wrapper
 
     @assert_opened
-    def transpose_image(self):
+    def reorient_image(self):
         """Rotate the image to the correct orientation."""
         raise NotImplementedError
 
@@ -85,7 +85,7 @@ class PillowImageManipulator(ImageManipulator):
         super().__exit__(exc_type, exc_value, traceback)
 
     @ImageManipulator.assert_opened
-    def transpose_image(self):
+    def reorient_image(self):
         """Rotate the image to the correct orientation.
 
         See the following for more information:
