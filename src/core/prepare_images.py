@@ -24,9 +24,9 @@ TEXT_Y_COORD = 0
 
 def prepare_images(
     input_path: Path,
-    output_path: Path,
     image_format_reader: Type[ImageFormatReader],
     image_manipulator: Type[ImageManipulator],
+    output_path: Path,
 ) -> None:
     """TODO
 
@@ -58,9 +58,9 @@ def prepare_images(
     for image_index, image in enumerate(images):
         prepare_image(
             image,
-            output_path / f"{image_index:0{filename_length}}.jpeg",
             metadata_reader,
             image_manipulator,
+            output_path / f"{image_index:0{filename_length}}.jpeg",
         )
 
 
@@ -78,9 +78,9 @@ def listdir_no_hidden(path: Path) -> Generator[str, None, None]:
 
 def prepare_image(
     image_path: Path,
-    output_path: Path,
     metadata_reader: Type[ImageMetadataReader],
     image_manipulator: Type[ImageManipulator],
+    output_path: Path,
 ) -> None:
     """TODO"""
     # Get the date

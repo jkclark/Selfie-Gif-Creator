@@ -12,13 +12,13 @@ from src.secondary_adapters.video_processors import VideoProcessor
 def prepare_images_and_make_movie(
     input_path: Path,
     temp_folder: Path,
-    output_path: Path,
     image_format_reader: Type[ImageFormatReader],
     image_manipulator: Type[ImageManipulator],
     video_processor: Type[VideoProcessor],
+    output_path: Path,
 ) -> None:
     """TODO"""
-    prepare_images(input_path, temp_folder, image_format_reader, image_manipulator)
+    prepare_images(input_path, image_format_reader, image_manipulator, temp_folder)
     make_movie_from_scratch(temp_folder, output_path, video_processor)
 
 
@@ -35,7 +35,7 @@ def prepare_images_and_append_to_movie(
 
     NOTE: This will prepare every file in the images_path.
     """
-    prepare_images(images_path, temp_folder, image_format_reader, image_manipulator)
+    prepare_images(images_path, image_format_reader, image_manipulator, temp_folder)
     append_images_to_movie(
         temp_folder,
         movie_path,

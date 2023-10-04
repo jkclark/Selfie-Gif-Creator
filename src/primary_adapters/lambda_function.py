@@ -6,8 +6,7 @@ from urllib.parse import unquote_plus
 
 import boto3
 
-from src.core.prepare_images_and_make_movie import \
-    prepare_images_and_append_to_movie
+from src.core.prepare_images_and_make_movie import prepare_images_and_append_to_movie
 from src.secondary_adapters.image_format_readers import WhatImageIFR
 from src.secondary_adapters.image_manipulators import PillowImageManipulator
 from src.secondary_adapters.video_processors import FFmpegVP
