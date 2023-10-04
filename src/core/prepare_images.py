@@ -1,4 +1,5 @@
 """TODO"""
+from datetime import datetime
 from pathlib import Path
 from typing import Generator, Type
 
@@ -6,7 +7,6 @@ from src.secondary_adapters.image_format_readers import ImageFormatReader
 from src.secondary_adapters.image_manipulators import ImageManipulator
 from src.secondary_adapters.image_metadata_readers import (
     HEICMetadataReader,
-    ImageMetadataReader,
     JPEGMetadataReader,
 )
 
@@ -16,6 +16,7 @@ IMAGE_FORMAT_TO_METADATA_READER = {
 }
 
 
+DATE_STR_FORMAT = "%m/%d/%Y"
 RESIZE_WIDTH = 600
 RESIZE_HEIGHT = 800
 TEXT_X_COORD = 25
@@ -27,23 +28,45 @@ def prepare_images(
     image_format_reader: Type[ImageFormatReader],
     image_manipulator: Type[ImageManipulator],
     output_path: Path,
-) -> None:
-    """TODO
+):
+    """Prepare all images in a directory for use in a movie.
 
-    Notes:
-        - Images will be prepared in sorted order.
-        - All images must be of the same format.
+    The input directory should contain only images to be prepared.
     """
     if not output_path.exists():
         raise FileNotFoundError(
             f"Prepared-image directory does not exist: {output_path}"
         )
 
-    # Get all images to be prepared
-    images = sorted(listdir_no_hidden(input_path))
+    # Get all images sorted by date increasing
+    images_and_dates = sorted(
+        [
+            (image, get_image_date(image, image_format_reader))
+            for image in listdir_no_hidden(input_path)
+        ],
+        key=lambda image_and_date: image_and_date[1],
+    )
 
-    # Get image format from first image
-    fmt = image_format_reader.get_image_format(images[0])
+    # Get length of filename padding
+    filename_length = len(str(len(images_and_dates)))
+
+    # Prepare image
+    for image_index, (image, date) in enumerate(images_and_dates):
+        prepare_image(
+            image,
+            date.strftime(DATE_STR_FORMAT),
+            image_manipulator,
+            output_path / f"{image_index:0{filename_length}}.jpeg",
+        )
+
+
+def get_image_date(
+    image_path: Path,
+    image_format_reader: Type[ImageFormatReader],
+) -> datetime:
+    """Get an image's date."""
+    # Get the image's format
+    fmt = image_format_reader.get_image_format(image_path)
 
     # Get appropriate metadata reader
     try:
@@ -51,17 +74,8 @@ def prepare_images(
     except KeyError as key_error:
         raise UnsupportedImageFormatError(fmt) from key_error
 
-    # Get length for filename padding
-    filename_length = len(str(len(images)))
-
-    # Prepare each image
-    for image_index, image in enumerate(images):
-        prepare_image(
-            image,
-            metadata_reader,
-            image_manipulator,
-            output_path / f"{image_index:0{filename_length}}.jpeg",
-        )
+    # Return the image's date
+    return metadata_reader.get_image_date(image_path)
 
 
 def listdir_no_hidden(path: Path) -> Generator[str, None, None]:
@@ -78,13 +92,11 @@ def listdir_no_hidden(path: Path) -> Generator[str, None, None]:
 
 def prepare_image(
     image_path: Path,
-    metadata_reader: Type[ImageMetadataReader],
+    date: str,
     image_manipulator: Type[ImageManipulator],
     output_path: Path,
 ) -> None:
     """TODO"""
-    # Get the date
-    date = metadata_reader.get_image_date(image_path)
 
     # Do image manipulation
     with image_manipulator(image_path) as manipulator:
