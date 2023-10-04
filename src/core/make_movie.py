@@ -7,8 +7,8 @@ from src.secondary_adapters.video_processors import VideoProcessor
 
 def make_movie_from_scratch(
     images_path: Path,
-    output_path: Path,
     video_processor: Type[VideoProcessor],
+    output_path: Path,
 ):
     """Concatenate images into a movie."""
     video_processor.create_movie_from_images(images_path, output_path)
