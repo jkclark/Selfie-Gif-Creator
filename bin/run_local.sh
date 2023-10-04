@@ -6,7 +6,7 @@
 # copied from the Docker container to the local machine.
 #
 # Args:
-# $1: local input image path
+# $1: local input image directory path
 # $2: local input movie path
 # $3: local output movie path
 
@@ -17,13 +17,14 @@ container_name=smm-dev-local
 source ./local.env
 
 # Run Docker container in the background
-docker run -d -p 9000:8080 --env-file local.env --name $container_name smm-dev:latest
+# PYTHONUNBUFFERED=1 is needed to see print statements in the logs
+docker run -d -p 9000:8080 --env-file local.env --name $container_name -e PYTHONUNBUFFERED=1 smm-dev:latest 
 
 # Make input- and temp-image directories
 docker exec $container_name mkdir -p ${INPUT_IMAGE_FOLDER_PATH} ${TEMP_IMAGE_FOLDER_PATH}
 
-# Copy input image from local to Docker container
-docker cp $1 $container_name:${INPUT_IMAGE_FOLDER_PATH}
+# Copy contents of input directory from local to Docker container
+docker cp $1/. $container_name:${INPUT_IMAGE_FOLDER_PATH}
 
 # Copy input movie from local to Docker container
 docker cp $2 $container_name:${MOVIE_PATH}
