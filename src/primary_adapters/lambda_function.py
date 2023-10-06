@@ -46,7 +46,8 @@ def lambda_handler(event, context):
         )
 
         # Download everything we need from S3
-        download_s3_inputs(event["Records"], os.environ[S3_AUX_BUCKET_ENV_VAR])
+        download_images_from_s3(event["Records"])
+        download_movie_from_s3()
 
     # Set image manipulator font path
     PillowImageManipulator.font_path = os.environ[FONT_FILE_PATH_ENV_VAR]
@@ -79,7 +80,7 @@ def create_image_folders(input_image_path: str, temp_image_path: str):
     Path(temp_image_path).mkdir(parents=True, exist_ok=True)
 
 
-def download_s3_inputs(records, aux_bucket: str):
+def download_images_from_s3(records):
     """Download input images, font, and movie from S3."""
     # Get the S3 bucket/key
     record = records[0]
@@ -93,13 +94,18 @@ def download_s3_inputs(records, aux_bucket: str):
         Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR]) / image_key,
     )
 
-    # Download original movie from aux bucket
+
+def download_movie_from_s3():
+    """Download input movie from S3 to the local filesystem."""
     s3_client.download_file(
-        aux_bucket, os.environ[S3_MOVIE_KEY_ENV_VAR], os.environ[MOVIE_PATH_ENV_VAR]
+        os.environ[S3_AUX_BUCKET_ENV_VAR],
+        os.environ[S3_MOVIE_KEY_ENV_VAR],
+        os.environ[MOVIE_PATH_ENV_VAR],
     )
 
 
 def upload_movie_to_s3():
+    """Upload output movie from local filesystem to S3."""
     s3_client.upload_file(
         os.environ[MOVIE_PATH_ENV_VAR],
         os.environ[S3_AUX_BUCKET_ENV_VAR],

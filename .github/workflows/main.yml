@@ -5,7 +5,8 @@ env:
 
 on:
   push:
-    branches: [main]
+    # TODO: Remove handle-multiple-images before merge to main
+    branches: [main, handle-multiple-images]
 
 jobs:
   build:
