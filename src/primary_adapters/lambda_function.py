@@ -53,7 +53,7 @@ def lambda_handler(event, context):
         )
 
         # Download everything we need from S3
-        download_images_from_s3(event["Records"])
+        download_images_from_s3(os.environ[S3_INPUT_BUCKET_ENV_VAR])
         download_movie_from_s3()
 
     # Set image manipulator font path
@@ -103,7 +103,7 @@ def get_most_recent_upload_time(bucket: str) -> datetime:
             ]
         )
 
-        # If there are no more objects, return True
+        # If there are no more objects, return
         if not response["isTruncated"]:
             break
 
@@ -119,22 +119,24 @@ def create_image_folders(input_image_path: str, temp_image_path: str):
     Path(temp_image_path).mkdir(parents=True, exist_ok=True)
 
 
-def download_images_from_s3(records):
-    """Download input images, font, and movie from S3."""
-    # Get the S3 bucket/key
-    record = records[0]
-    input_bucket = record["s3"]["bucket"]["name"]
-    image_key = unquote_plus(record["s3"]["object"]["key"]).replace("/", "")
+def download_images_from_s3(bucket: str) -> None:
+    """Download all images from an S3.
 
-    # Download new image(s) from input bucket
-    s3_client.download_file(
-        input_bucket,
-        image_key,
-        Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR]) / image_key,
-    )
+    This function actually just downloads all objects in the bucket, regardless
+    of filetype, extension, etc.
+    """
+    s3 = boto3.resource("s3")
+    bucket = s3.Bucket(bucket)
+
+    for obj in bucket.objects.all():
+        s3_client.download_file(
+            bucket.name,
+            obj.key,
+            Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR]) / unquote_plus(obj.key),
+        )
 
 
-def download_movie_from_s3():
+def download_movie_from_s3() -> None:
     """Download input movie from S3 to the local filesystem."""
     s3_client.download_file(
         os.environ[S3_AUX_BUCKET_ENV_VAR],
@@ -143,7 +145,7 @@ def download_movie_from_s3():
     )
 
 
-def upload_movie_to_s3():
+def upload_movie_to_s3() -> None:
     """Upload output movie from local filesystem to S3."""
     s3_client.upload_file(
         os.environ[MOVIE_PATH_ENV_VAR],
@@ -152,6 +154,6 @@ def upload_movie_to_s3():
     )
 
 
-def is_dev_environment():
+def is_dev_environment() -> bool:
     """Return True if this is a local environment, False otherwise."""
     return os.environ["ENV"] == "dev"
