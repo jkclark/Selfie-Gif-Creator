@@ -1,6 +1,7 @@
 """AWS Lambda function for processing new images and appending them to a movie."""
 import json
 import os
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import unquote_plus
 
@@ -15,6 +16,7 @@ s3_client = boto3.client("s3")
 
 
 ### S3 env vars
+S3_INPUT_BUCKET_ENV_VAR = "S3_INPUT_BUCKET"
 S3_AUX_BUCKET_ENV_VAR = "S3_AUX_BUCKET"
 S3_MOVIE_KEY_ENV_VAR = "S3_MOVIE_KEY"
 
@@ -34,7 +36,12 @@ FONT_FILE_PATH_ENV_VAR = "FONT_FILE_PATH"
 
 def lambda_handler(event, context):
     """Main driver code for the Lambda function."""
-    if not is_dev_environment():
+    # If this is a cloud environment and uploads are finished,
+    # download inputs from S3
+    upload_grace_period = timedelta(seconds=15)
+    if not is_dev_environment() and uploads_are_finished(
+        os.environ[S3_INPUT_BUCKET_ENV_VAR], upload_grace_period
+    ):
         # Create directories in Lambda's local filesystem
         # NOTE: This needs to be done here and cannot be done beforehand
         #       at build time because AWS clears out the /tmp directory
@@ -72,6 +79,38 @@ def lambda_handler(event, context):
         )
 
     return {"statusCode": 200, "body": json.dumps("Hello from Lambda!")}
+
+
+def uploads_are_finished(bucket: str, grace_period: timedelta) -> bool:
+    """Return True if the most recent upload happened longer ago than (grace period)."""
+    return datetime.now() - get_most_recent_upload_time(bucket) > grace_period
+
+
+def get_most_recent_upload_time(bucket: str) -> datetime:
+    """Get the most recent upload time of all objects in the bucket."""
+    args = {"Bucket": bucket}
+    most_recent_upload_time = datetime.min
+    while True:
+        # Get next batch of objects
+        response = s3_client.list_objects_v2(**args)
+
+        # Set most-recent-upload time
+        most_recent_upload_time = max(
+            most_recent_upload_time,
+            *[
+                datetime.strptime(obj["LastModified"], "%Y-%m-%dT%H:%M:%S.%f%z")
+                for obj in response["Contents"]
+            ]
+        )
+
+        # If there are no more objects, return True
+        if not response["isTruncated"]:
+            break
+
+        # Otherwise, set the ContinuationToken and continue
+        args["ContinuationToken"] = response["NextContinuationToken"]
+
+    return most_recent_upload_time
 
 
 def create_image_folders(input_image_path: str, temp_image_path: str):
