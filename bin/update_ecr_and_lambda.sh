@@ -2,8 +2,10 @@
 # This script builds the Docker image, deploys it to Amazon ECR, and updates
 # the Lambda function to use the latest version of the image.
 #
-# NOTE: Typically, this script shouldn't be run manually. Deployments to ECR and
-# Lambda should be done automatically via GitHub Actions.
+# Typically, this script shouldn't be run manually. Deployments to ECR and
+# Lambda should be done automatically via GitHub Actions. However, it is useful
+# for quickly iterating Lambda-specific code, since this script is much faster
+# than the GitHub Actions workflow.
 #
 # Args:
 # $1: AWS account ID
