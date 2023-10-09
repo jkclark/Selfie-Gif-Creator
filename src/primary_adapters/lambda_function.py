@@ -12,8 +12,6 @@ from src.secondary_adapters.image_format_readers import WhatImageIFR
 from src.secondary_adapters.image_manipulators import PillowImageManipulator
 from src.secondary_adapters.video_processors import FFmpegVP
 
-s3 = boto3.resource("s3")
-
 ### S3 env vars
 S3_INPUT_BUCKET_ENV_VAR = "S3_INPUT_BUCKET"
 S3_AUX_BUCKET_ENV_VAR = "S3_AUX_BUCKET"
@@ -36,6 +34,8 @@ MOVIE_PATH_ENV_VAR = "MOVIE_PATH"
 # Path to font file
 FONT_FILE_PATH_ENV_VAR = "FONT_FILE_PATH"
 
+s3 = boto3.resource("s3")
+
 
 def lambda_handler(event, context):
     """Main driver code for the Lambda function."""
@@ -47,7 +47,6 @@ def lambda_handler(event, context):
         # If there are any objects in the input bucket
         if bucket_has_any_objects(input_bucket):
             if uploads_are_finished(input_bucket, timedelta(seconds=5)):
-                # TODO: Remove print statement
                 print("Downloads are finished!")
 
                 # Create directories in Lambda's local filesystem
@@ -70,10 +69,8 @@ def lambda_handler(event, context):
                 )
 
             else:
-                # TODO: Remove print statement
                 print("Downloads are not finished yet!")
 
-                # TODO: Only schedule Lambda function if it is not already scheduled
                 # Schedule this Lambda function to be invoked again
                 # AWS EventBridge limits us to minute-level precision, so the following
                 # results in the function being scheduled to run after the next whole
@@ -84,7 +81,6 @@ def lambda_handler(event, context):
                 return
 
         else:
-            # TODO: Remove print statement
             print("No objects in input bucket!")
 
             # Exit early
@@ -142,7 +138,6 @@ def get_most_recent_upload_time(bucket) -> datetime:
             else obj.last_modified
         )
 
-    # TODO: Remove print statement
     print(f"Most recent upload time: {most_recent_upload_time}")
     return most_recent_upload_time
 
@@ -165,24 +160,27 @@ def download_s3_bucket_contents(bucket, dest_folder: Path) -> None:
 def schedule_lambda_function(invocation_time: datetime) -> None:
     """Schedule this Lambda function to be invoked at the given time.
 
+    If the schedule exists already, this function does nothing.
+
     Note that the precision of AWS EventBridge is 1 minute, so the invocation
     time will be rounded down to the nearest minute.
     """
-    # TODO: Remove print statement
-    print(f"Scheduling Lambda function for invocation at {invocation_time}")
-
     scheduler = boto3.client("scheduler")
-    scheduler.create_schedule(
-        ActionAfterCompletion="DELETE",
-        FlexibleTimeWindow={"Mode": "OFF"},
-        GroupName="SelfieMovieMaker",
-        Name="SingleSMMInvocation",
-        ScheduleExpression=f"at({invocation_time.strftime('%Y-%m-%dT%H:%M:00')})",
-        Target={
-            "Arn": os.environ[EB_TARGET_ARN_ENV_VAR],
-            "RoleArn": os.environ[EB_ROLE_ARN_ENV_VAR],
-        },
-    )
+    try:
+        print(f"Scheduling Lambda function for invocation at {invocation_time}")
+        scheduler.create_schedule(
+            ActionAfterCompletion="DELETE",
+            FlexibleTimeWindow={"Mode": "OFF"},
+            GroupName="SelfieMovieMaker",
+            Name="OneTimeSelfieMovieMakerInvocation",
+            ScheduleExpression=f"at({invocation_time.strftime('%Y-%m-%dT%H:%M:00')})",
+            Target={
+                "Arn": os.environ[EB_TARGET_ARN_ENV_VAR],
+                "RoleArn": os.environ[EB_ROLE_ARN_ENV_VAR],
+            },
+        )
+    except scheduler.exceptions.ConflictException:
+        print("Not creating schedule because one already exists.")
 
 
 def is_dev_environment() -> bool:
