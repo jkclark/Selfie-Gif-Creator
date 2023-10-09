@@ -39,11 +39,11 @@ s3 = boto3.resource("s3")
 
 def lambda_handler(event, context):
     """Main driver code for the Lambda function."""
-    input_bucket = s3.Bucket(os.environ[S3_INPUT_BUCKET_ENV_VAR])
-    aux_bucket = s3.Bucket(os.environ[S3_AUX_BUCKET_ENV_VAR])
-
     # If this is a cloud environment
     if not is_dev_environment():
+        input_bucket = s3.Bucket(os.environ[S3_INPUT_BUCKET_ENV_VAR])
+        aux_bucket = s3.Bucket(os.environ[S3_AUX_BUCKET_ENV_VAR])
+
         # If there are any objects in the input bucket
         if bucket_has_any_objects(input_bucket):
             if uploads_are_finished(input_bucket, timedelta(seconds=5)):
@@ -167,7 +167,6 @@ def schedule_lambda_function(invocation_time: datetime) -> None:
     """
     scheduler = boto3.client("scheduler")
     try:
-        print(f"Scheduling Lambda function for invocation at {invocation_time}")
         scheduler.create_schedule(
             ActionAfterCompletion="DELETE",
             FlexibleTimeWindow={"Mode": "OFF"},
@@ -181,6 +180,8 @@ def schedule_lambda_function(invocation_time: datetime) -> None:
         )
     except scheduler.exceptions.ConflictException:
         print("Not creating schedule because one already exists.")
+    else:
+        print(f"Scheduled Lambda function for invocation at {invocation_time}")
 
 
 def is_dev_environment() -> bool:

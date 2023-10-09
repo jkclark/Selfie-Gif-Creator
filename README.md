@@ -23,4 +23,5 @@ In order to run `bin/update_ecr_and_lambda.sh`, the AWS CLI needs to be authenti
 
 ### Other notes
 
+- The AWS Lambda Python 3.10 runtime uses an older version of boto3 that does not let us (AFAIK) create an EventBridge schedule that deletes itself after its execution. As mentioned in `pyproject.toml` and the `Dockerfile`, we install our own version of `boto3` and `botocore` so that we have access to this feature.
 - `ffmpeg.tar.xz` is downloaded from https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
