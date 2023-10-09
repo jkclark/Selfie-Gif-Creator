@@ -173,6 +173,7 @@ def schedule_lambda_function(invocation_time: datetime) -> None:
 
     scheduler = boto3.client("scheduler")
     scheduler.create_schedule(
+        ActionAfterCompletion="DELETE",
         FlexibleTimeWindow={"Mode": "OFF"},
         GroupName="SelfieMovieMaker",
         Name="SingleSMMInvocation",
