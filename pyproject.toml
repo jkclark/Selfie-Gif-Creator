@@ -18,6 +18,14 @@ pillow-heif = "^0.12.0"
 pylint = "^2.17.5"
 isort = "^5.12.0"
 
+# This is here to document that we're using a custom version of boto3/botocore.
+# ("custom" meaning not the default one that the Lambda Python 3.10 runtime uses)
+# This line doesn't actually impact which versions are installed.
+# See the Dockerfile for the command that installs the custom boto3/botocore.
+[tool.poetry.group.custom-boto3.dependencies]
+boto3 = "1.28.62"
+botocore = "1.31.62"
+
 [build-system]
 # This is tied to the poetry version in the Dockerfile
 # Don't chage this without changing that
