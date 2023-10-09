@@ -12,8 +12,7 @@ from src.secondary_adapters.image_format_readers import WhatImageIFR
 from src.secondary_adapters.image_manipulators import PillowImageManipulator
 from src.secondary_adapters.video_processors import FFmpegVP
 
-s3_client = boto3.client("s3")
-
+s3 = boto3.resource("s3")
 
 ### S3 env vars
 S3_INPUT_BUCKET_ENV_VAR = "S3_INPUT_BUCKET"
@@ -36,12 +35,17 @@ FONT_FILE_PATH_ENV_VAR = "FONT_FILE_PATH"
 
 def lambda_handler(event, context):
     """Main driver code for the Lambda function."""
+    input_bucket = s3.Bucket(os.environ[S3_INPUT_BUCKET_ENV_VAR])
+    aux_bucket = s3.Bucket(os.environ[S3_AUX_BUCKET_ENV_VAR])
+
     # If this is a cloud environment and uploads are finished,
     # download inputs from S3
-    upload_grace_period = timedelta(seconds=15)
     if not is_dev_environment() and uploads_are_finished(
-        os.environ[S3_INPUT_BUCKET_ENV_VAR], upload_grace_period
+        input_bucket, timedelta(seconds=5)
     ):
+        # TODO: Remove print statement
+        print("Downloads are finished!")
+
         # Create directories in Lambda's local filesystem
         # NOTE: This needs to be done here and cannot be done beforehand
         #       at build time because AWS clears out the /tmp directory
@@ -52,9 +56,14 @@ def lambda_handler(event, context):
             os.environ[TEMP_FOLDER_PATH_ENV_VAR],
         )
 
-        # Download everything we need from S3
-        download_images_from_s3(os.environ[S3_INPUT_BUCKET_ENV_VAR])
-        download_movie_from_s3()
+        # Download input images
+        download_s3_bucket_contents(
+            input_bucket, Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
+        )
+        # Download input movie
+        aux_bucket.download_file(
+            os.environ[S3_MOVIE_KEY_ENV_VAR], os.environ[MOVIE_PATH_ENV_VAR]
+        )
 
     # Set image manipulator font path
     PillowImageManipulator.font_path = os.environ[FONT_FILE_PATH_ENV_VAR]
@@ -70,88 +79,53 @@ def lambda_handler(event, context):
     )
 
     if not is_dev_environment():
-        upload_movie_to_s3()
-
-        # Delete input image from S3
-        s3_client.delete_object(
-            Bucket=event["Records"][0]["s3"]["bucket"]["name"],
-            Key=event["Records"][0]["s3"]["object"]["key"],
+        # Upload output movie to S3
+        aux_bucket.upload_file(
+            os.environ[MOVIE_PATH_ENV_VAR], os.environ[S3_MOVIE_KEY_ENV_VAR]
         )
 
-    return {"statusCode": 200, "body": json.dumps("Hello from Lambda!")}
+        # Delete all input images
+        input_bucket.objects.delete()
+
+    return {"statusCode": 200, "body": json.dumps("Appended image(s) to movie!")}
 
 
-def uploads_are_finished(bucket: str, grace_period: timedelta) -> bool:
+def uploads_are_finished(
+    bucket: boto3.resources.factory.s3.Bucket, grace_period: timedelta
+) -> bool:
     """Return True if the most recent upload happened longer ago than (grace period)."""
     return datetime.now() - get_most_recent_upload_time(bucket) > grace_period
 
 
-def get_most_recent_upload_time(bucket: str) -> datetime:
-    """Get the most recent upload time of all objects in the bucket."""
-    args = {"Bucket": bucket}
+def get_most_recent_upload_time(bucket: boto3.resources.factory.s3.Bucket) -> datetime:
+    """Get the most recent upload time of all object upload times in the bucket."""
     most_recent_upload_time = datetime.min
-    while True:
-        # Get next batch of objects
-        response = s3_client.list_objects_v2(**args)
-
-        # Set most-recent-upload time
+    for obj in bucket.objects.all():
         most_recent_upload_time = max(
             most_recent_upload_time,
-            *[
-                datetime.strptime(obj["LastModified"], "%Y-%m-%dT%H:%M:%S.%f%z")
-                for obj in response["Contents"]
-            ]
+            datetime.strptime(obj.last_modified, "%Y-%m-%dT%H:%M:%S.%f%z"),
         )
 
-        # If there are no more objects, return
-        if not response["isTruncated"]:
-            break
-
-        # Otherwise, set the ContinuationToken and continue
-        args["ContinuationToken"] = response["NextContinuationToken"]
-
+    # TODO: Remove print statement
+    print(f"Most recent upload time: {most_recent_upload_time}")
     return most_recent_upload_time
 
 
 def create_image_folders(input_image_path: str, temp_image_path: str):
-    """Create folders for input and temp images."""
+    """Create folders for input and temp images in the Lambda filesystem."""
     Path(input_image_path).mkdir(parents=True, exist_ok=True)
     Path(temp_image_path).mkdir(parents=True, exist_ok=True)
 
 
-def download_images_from_s3(bucket: str) -> None:
-    """Download all images from an S3.
-
-    This function actually just downloads all objects in the bucket, regardless
-    of filetype, extension, etc.
-    """
-    s3 = boto3.resource("s3")
-    bucket = s3.Bucket(bucket)
-
+def download_s3_bucket_contents(
+    bucket: boto3.resources.factory.s3.Bucket, dest_folder: Path
+) -> None:
+    """Download all objects from the given bucket to the local filesystem."""
     for obj in bucket.objects.all():
-        s3_client.download_file(
-            bucket.name,
+        bucket.download_file(
             obj.key,
-            Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR]) / unquote_plus(obj.key),
+            dest_folder / unquote_plus(obj.key),
         )
-
-
-def download_movie_from_s3() -> None:
-    """Download input movie from S3 to the local filesystem."""
-    s3_client.download_file(
-        os.environ[S3_AUX_BUCKET_ENV_VAR],
-        os.environ[S3_MOVIE_KEY_ENV_VAR],
-        os.environ[MOVIE_PATH_ENV_VAR],
-    )
-
-
-def upload_movie_to_s3() -> None:
-    """Upload output movie from local filesystem to S3."""
-    s3_client.upload_file(
-        os.environ[MOVIE_PATH_ENV_VAR],
-        os.environ[S3_AUX_BUCKET_ENV_VAR],
-        os.environ[S3_MOVIE_KEY_ENV_VAR],
-    )
 
 
 def is_dev_environment() -> bool:
