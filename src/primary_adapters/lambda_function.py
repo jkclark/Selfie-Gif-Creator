@@ -19,6 +19,10 @@ S3_INPUT_BUCKET_ENV_VAR = "S3_INPUT_BUCKET"
 S3_AUX_BUCKET_ENV_VAR = "S3_AUX_BUCKET"
 S3_MOVIE_KEY_ENV_VAR = "S3_MOVIE_KEY"
 
+### EventBridge env vars
+EB_TARGET_ARN_ENV_VAR = "EB_TARGET_ARN"
+EB_ROLE_ARN_ENV_VAR = "EB_ROLE_ARN"
+
 ### Local filesystem (i.e., "/tmp/...") env vars
 # Path to folder for input images
 INPUT_IMAGE_FOLDER_PATH_ENV_VAR = "INPUT_IMAGE_FOLDER_PATH"
@@ -38,32 +42,53 @@ def lambda_handler(event, context):
     input_bucket = s3.Bucket(os.environ[S3_INPUT_BUCKET_ENV_VAR])
     aux_bucket = s3.Bucket(os.environ[S3_AUX_BUCKET_ENV_VAR])
 
-    # If this is a cloud environment and uploads are finished,
-    # download inputs from S3
-    if not is_dev_environment() and uploads_are_finished(
-        input_bucket, timedelta(seconds=5)
-    ):
-        # TODO: Remove print statement
-        print("Downloads are finished!")
+    # If this is a cloud environment
+    if not is_dev_environment():
+        # If there are any objects in the input bucket
+        if bucket_has_any_objects(input_bucket):
+            if uploads_are_finished(input_bucket, timedelta(seconds=5)):
+                # TODO: Remove print statement
+                print("Downloads are finished!")
 
-        # Create directories in Lambda's local filesystem
-        # NOTE: This needs to be done here and cannot be done beforehand
-        #       at build time because AWS clears out the /tmp directory
-        #       before each Lambda function invocation. See
-        #       https://stackoverflow.com/a/73642693/3801865
-        create_image_folders(
-            os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR],
-            os.environ[TEMP_FOLDER_PATH_ENV_VAR],
-        )
+                # Create directories in Lambda's local filesystem
+                # NOTE: This needs to be done here and cannot be done beforehand
+                #       at build time because AWS clears out the /tmp directory
+                #       before each Lambda function invocation. See
+                #       https://stackoverflow.com/a/73642693/3801865
+                create_image_folders(
+                    os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR],
+                    os.environ[TEMP_FOLDER_PATH_ENV_VAR],
+                )
 
-        # Download input images
-        download_s3_bucket_contents(
-            input_bucket, Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
-        )
-        # Download input movie
-        aux_bucket.download_file(
-            os.environ[S3_MOVIE_KEY_ENV_VAR], os.environ[MOVIE_PATH_ENV_VAR]
-        )
+                # Download input images
+                download_s3_bucket_contents(
+                    input_bucket, Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
+                )
+                # Download input movie
+                aux_bucket.download_file(
+                    os.environ[S3_MOVIE_KEY_ENV_VAR], os.environ[MOVIE_PATH_ENV_VAR]
+                )
+
+            else:
+                # TODO: Remove print statement
+                print("Downloads are not finished yet!")
+
+                # TODO: Only schedule Lambda function if it is not already scheduled
+                # Schedule this Lambda function to be invoked again
+                # AWS EventBridge limits us to minute-level precision, so the following
+                # results in the function being scheduled to run after the next whole
+                # minute.
+                schedule_lambda_function(datetime.now() + timedelta(seconds=120))
+
+                # Exit early
+                return
+
+        else:
+            # TODO: Remove print statement
+            print("No objects in input bucket!")
+
+            # Exit early
+            return
 
     # Set image manipulator font path
     PillowImageManipulator.font_path = os.environ[FONT_FILE_PATH_ENV_VAR]
@@ -90,20 +115,31 @@ def lambda_handler(event, context):
     return {"statusCode": 200, "body": json.dumps("Appended image(s) to movie!")}
 
 
-def uploads_are_finished(
-    bucket: boto3.resources.factory.s3.Bucket, grace_period: timedelta
-) -> bool:
+def bucket_has_any_objects(bucket) -> bool:
+    """Return True if the given bucket has any objects in it, False otherwise."""
+    return bool(list(bucket.objects.limit(count=1)))
+
+
+def uploads_are_finished(bucket, grace_period: timedelta) -> bool:
     """Return True if the most recent upload happened longer ago than (grace period)."""
-    return datetime.now() - get_most_recent_upload_time(bucket) > grace_period
+    most_recent_upload_time = get_most_recent_upload_time(bucket)
+    return (
+        datetime.now(most_recent_upload_time.tzinfo) - most_recent_upload_time
+        > grace_period
+    )
 
 
-def get_most_recent_upload_time(bucket: boto3.resources.factory.s3.Bucket) -> datetime:
+def get_most_recent_upload_time(bucket) -> datetime:
     """Get the most recent upload time of all object upload times in the bucket."""
-    most_recent_upload_time = datetime.min
+    most_recent_upload_time = None
     for obj in bucket.objects.all():
-        most_recent_upload_time = max(
-            most_recent_upload_time,
-            datetime.strptime(obj.last_modified, "%Y-%m-%dT%H:%M:%S.%f%z"),
+        most_recent_upload_time = (
+            max(
+                most_recent_upload_time,
+                obj.last_modified,
+            )
+            if most_recent_upload_time
+            else obj.last_modified
         )
 
     # TODO: Remove print statement
@@ -117,15 +153,35 @@ def create_image_folders(input_image_path: str, temp_image_path: str):
     Path(temp_image_path).mkdir(parents=True, exist_ok=True)
 
 
-def download_s3_bucket_contents(
-    bucket: boto3.resources.factory.s3.Bucket, dest_folder: Path
-) -> None:
+def download_s3_bucket_contents(bucket, dest_folder: Path) -> None:
     """Download all objects from the given bucket to the local filesystem."""
     for obj in bucket.objects.all():
         bucket.download_file(
             obj.key,
             dest_folder / unquote_plus(obj.key),
         )
+
+
+def schedule_lambda_function(invocation_time: datetime) -> None:
+    """Schedule this Lambda function to be invoked at the given time.
+
+    Note that the precision of AWS EventBridge is 1 minute, so the invocation
+    time will be rounded down to the nearest minute.
+    """
+    # TODO: Remove print statement
+    print(f"Scheduling Lambda function for invocation at {invocation_time}")
+
+    scheduler = boto3.client("scheduler")
+    scheduler.create_schedule(
+        FlexibleTimeWindow={"Mode": "OFF"},
+        GroupName="SelfieMovieMaker",
+        Name="SingleSMMInvocation",
+        ScheduleExpression=f"at({invocation_time.strftime('%Y-%m-%dT%H:%M:00')})",
+        Target={
+            "Arn": os.environ[EB_TARGET_ARN_ENV_VAR],
+            "RoleArn": os.environ[EB_ROLE_ARN_ENV_VAR],
+        },
+    )
 
 
 def is_dev_environment() -> bool:
