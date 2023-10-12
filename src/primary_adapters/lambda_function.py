@@ -39,52 +39,16 @@ s3 = boto3.resource("s3")
 
 def lambda_handler(event, context):
     """Main driver code for the Lambda function."""
+    input_bucket = s3.Bucket(os.environ[S3_INPUT_BUCKET_ENV_VAR])
+    aux_bucket = s3.Bucket(os.environ[S3_AUX_BUCKET_ENV_VAR])
+
     # If this is a cloud environment
     if not is_dev_environment():
-        input_bucket = s3.Bucket(os.environ[S3_INPUT_BUCKET_ENV_VAR])
-        aux_bucket = s3.Bucket(os.environ[S3_AUX_BUCKET_ENV_VAR])
-
-        # If there are any objects in the input bucket
-        if bucket_has_any_objects(input_bucket):
-            if uploads_are_finished(input_bucket, timedelta(seconds=5)):
-                print("Downloads are finished!")
-
-                # Create directories in Lambda's local filesystem
-                # NOTE: This needs to be done here and cannot be done beforehand
-                #       at build time because AWS clears out the /tmp directory
-                #       before each Lambda function invocation. See
-                #       https://stackoverflow.com/a/73642693/3801865
-                create_image_folders(
-                    os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR],
-                    os.environ[TEMP_FOLDER_PATH_ENV_VAR],
-                )
-
-                # Download input images
-                download_s3_bucket_contents(
-                    input_bucket, Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
-                )
-                # Download input movie
-                aux_bucket.download_file(
-                    os.environ[S3_MOVIE_KEY_ENV_VAR], os.environ[MOVIE_PATH_ENV_VAR]
-                )
-
-            else:
-                print("Downloads are not finished yet!")
-
-                # Schedule this Lambda function to be invoked again
-                # AWS EventBridge limits us to minute-level precision, so the following
-                # results in the function being scheduled to run after the next whole
-                # minute.
-                schedule_lambda_function(datetime.now() + timedelta(seconds=120))
-
-                # Exit early
-                return
-
-        else:
-            print("No objects in input bucket!")
-
-            # Exit early
-            return
+        if not do_lambda_setup(input_bucket, aux_bucket):
+            return {
+                "statusCode": 200,
+                "body": json.dumps("No images/uploads not finished!"),
+            }
 
     # Set image manipulator font path
     PillowImageManipulator.font_path = os.environ[FONT_FILE_PATH_ENV_VAR]
@@ -100,15 +64,72 @@ def lambda_handler(event, context):
     )
 
     if not is_dev_environment():
-        # Upload output movie to S3
-        aux_bucket.upload_file(
-            os.environ[MOVIE_PATH_ENV_VAR], os.environ[S3_MOVIE_KEY_ENV_VAR]
-        )
-
-        # Delete all input images
-        input_bucket.objects.delete()
+        do_lambda_teardown(input_bucket, aux_bucket)
 
     return {"statusCode": 200, "body": json.dumps("Appended image(s) to movie!")}
+
+
+def do_lambda_setup(input_bucket, aux_bucket) -> bool:
+    """Do everything necessary before appending image(s) to a movie.
+
+    This function checks that the input-image bucket is not empty and that uploads are finished,
+    and then downloads input images to the local filesystem.
+
+    Returns True if we should continue with processing the images and appending to the movie,
+    False otherwise.
+    """
+    # If there are any objects in the input bucket
+    if bucket_has_any_objects(input_bucket):
+        if uploads_are_finished(input_bucket, timedelta(seconds=5)):
+            print("Uploads are finished!")
+
+            # Create directories in Lambda's local filesystem
+            # NOTE: This needs to be done here and cannot be done beforehand
+            #       at build time because AWS clears out the /tmp directory
+            #       before each Lambda function invocation. See
+            #       https://stackoverflow.com/a/73642693/3801865
+            create_image_folders(
+                os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR],
+                os.environ[TEMP_FOLDER_PATH_ENV_VAR],
+            )
+
+            # Download input images
+            download_s3_bucket_contents(
+                input_bucket, Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
+            )
+            # Download input movie
+            aux_bucket.download_file(
+                os.environ[S3_MOVIE_KEY_ENV_VAR], os.environ[MOVIE_PATH_ENV_VAR]
+            )
+
+            return True
+
+        print("Downloads are not finished yet!")
+
+        # Schedule this Lambda function to be invoked again
+        # AWS EventBridge limits us to minute-level precision, so the following
+        # results in the function being scheduled to run after the next whole
+        # minute.
+        schedule_lambda_function(datetime.now() + timedelta(seconds=120))
+
+        # Exit early
+        return False
+
+    print("No objects in input bucket!")
+
+    # Exit early
+    return False
+
+
+def do_lambda_teardown(input_bucket, aux_bucket) -> None:
+    """This function uploads the output movie to S3 and deletes all input images."""
+    # Upload output movie to S3
+    aux_bucket.upload_file(
+        os.environ[MOVIE_PATH_ENV_VAR], os.environ[S3_MOVIE_KEY_ENV_VAR]
+    )
+
+    # Delete all input images
+    input_bucket.objects.delete()
 
 
 def bucket_has_any_objects(bucket) -> bool:
@@ -123,23 +144,6 @@ def uploads_are_finished(bucket, grace_period: timedelta) -> bool:
         datetime.now(most_recent_upload_time.tzinfo) - most_recent_upload_time
         > grace_period
     )
-
-
-def get_most_recent_upload_time(bucket) -> datetime:
-    """Get the most recent upload time of all object upload times in the bucket."""
-    most_recent_upload_time = None
-    for obj in bucket.objects.all():
-        most_recent_upload_time = (
-            max(
-                most_recent_upload_time,
-                obj.last_modified,
-            )
-            if most_recent_upload_time
-            else obj.last_modified
-        )
-
-    print(f"Most recent upload time: {most_recent_upload_time}")
-    return most_recent_upload_time
 
 
 def create_image_folders(input_image_path: str, temp_image_path: str):
@@ -182,6 +186,23 @@ def schedule_lambda_function(invocation_time: datetime) -> None:
         print("Not creating schedule because one already exists.")
     else:
         print(f"Scheduled Lambda function for invocation at {invocation_time}")
+
+
+def get_most_recent_upload_time(bucket) -> datetime:
+    """Get the most recent upload time of all object upload times in the bucket."""
+    most_recent_upload_time = None
+    for obj in bucket.objects.all():
+        most_recent_upload_time = (
+            max(
+                most_recent_upload_time,
+                obj.last_modified,
+            )
+            if most_recent_upload_time
+            else obj.last_modified
+        )
+
+    print(f"Most recent upload time: {most_recent_upload_time}")
+    return most_recent_upload_time
 
 
 def is_dev_environment() -> bool:
