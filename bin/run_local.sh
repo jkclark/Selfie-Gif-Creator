@@ -45,4 +45,4 @@ curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}'
 docker cp $container_name:${MOVIE_PATH} $3
 
 # Delete Docker container
-# docker rm -f $container_name
+docker rm -f $container_name
