@@ -28,7 +28,7 @@ def prepare_images(
     image_format_reader: Type[ImageFormatReader],
     image_manipulator: Type[ImageManipulator],
     output_path: Path,
-):
+) -> None:
     """Prepare all images in a directory for use in a movie.
 
     The input directory should contain only images to be prepared.
