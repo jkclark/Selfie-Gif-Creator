@@ -1,4 +1,4 @@
-name: Deploy to AWS ECR/Lambda
+name: Deploy to AWS
 
 env:
   AWS_REGION: eu-west-3
@@ -8,8 +8,8 @@ on:
     branches: [main]
 
 jobs:
-  build:
-    name: Deploy to AWS ECR/Lambda
+  update_docker_image_and_lambda:
+    name: Deploy Docker image to AWS ECR/Lambda
     runs-on: ubuntu-latest
 
     steps:
@@ -45,3 +45,54 @@ jobs:
         env:
           IMAGE_URI: ${{ steps.build-push-image-to-ecr.outputs.image }}
         run: aws lambda update-function-code --function-name SelfieMovierMakerUpdateDocker --image-uri $IMAGE_URI
+
+  deploy_zip_to_lambda:
+    name: Deploy to AWS Lambda from source
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout source code
+        uses: actions/checkout@v1
+
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Zip dependencies
+        run: cd ./.venv/lib/python3.10/site-packages && zip -r ../../../../deployment.zip .
+
+      # For whatever reason, combinging this cd with the zip command breaks things
+      - name: cd to project root
+        run: cd ../../../../
+
+      - name: Zip source code
+        run: zip -gr deployment.zip src/*
+
+      - name: Deploy zip to AWS Lambda
+        uses: appleboy/lambda-action@master
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_REGION }}
+          function_name: SMMPreprocessImage
+          zip_file: deployment.zip

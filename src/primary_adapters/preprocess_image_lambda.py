@@ -9,6 +9,7 @@ from src.secondary_adapters.image_format_readers import WhatImageIFR
 
 
 def lambda_handler(event, context):
+    print("FART!")
     s3 = boto3.resource("s3")
     input_bucket = s3.Bucket(os.environ["S3_TO_BE_PREPARED_BUCKET"])
     to_be_appended_bucket = s3.Bucket(os.environ["S3_TO_BE_APPENDED_BUCKET"])
