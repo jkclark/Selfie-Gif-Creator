@@ -36,10 +36,8 @@ until [ "`docker inspect -f {{.State.Running}} $container_name`"=="true" ]; do
 done;
 
 # Send GET request to trigger Lambda function
-# NOTE: Even with the above sleep call, we sometimes see the following
-#       error when making the GET request:
-#       curl: (56) Recv failure: Connection reset by peer
-curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}'
+# NOTE: expectedNumImages doesn't matter when run locally
+curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"expectedNumImages": -1}'
 
 # Copy output movie from Docker container to local
 docker cp $container_name:${MOVIE_PATH} $3
