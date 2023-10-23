@@ -56,9 +56,9 @@ def lambda_handler(event, context):
     # Prepare images & append image(s) to movie
     prepare_images_and_append_to_movie(
         Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR]),
+        "%Y_%m_%d_%H_%M_%S",
         Path(os.environ[TEMP_FOLDER_PATH_ENV_VAR]),
         Path(os.environ[MOVIE_PATH_ENV_VAR]),
-        WhatImageIFR,
         PillowImageManipulator,
         FFmpegVP,
     )

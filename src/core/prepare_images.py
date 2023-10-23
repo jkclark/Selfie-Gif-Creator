@@ -23,6 +23,38 @@ TEXT_X_COORD = 25
 TEXT_Y_COORD = 0
 
 
+def prepare_dated_images(
+    input_path: Path,
+    input_date_format: str,
+    image_manipulator: Type[ImageManipulator],
+    output_path: Path,
+) -> None:
+    """Prepare all images in a directory, where images are titled by date.
+
+    Images must be titled with date in the format specified by input_date_format.
+
+    Args:
+        input_path: Path to directory containing images to be prepared
+        input_date_format: Format of date in image titles
+        image_manipulator: ImageManipulator subclass to use for image manipulation
+        output_path: Path to directory in which save prepared images
+
+    Images are sorted by title (date) increasing.
+    """
+    if not output_path.exists():
+        raise FileNotFoundError(
+            f"Prepared-image directory does not exist: {output_path}"
+        )
+
+    for image_index, image in enumerate(sorted(listdir_no_hidden(input_path))):
+        prepare_image(
+            image,
+            datetime.strptime(image.stem, input_date_format).strftime(DATE_STR_FORMAT),
+            image_manipulator,
+            output_path / f"{image_index:04}.jpeg",
+        )
+
+
 def prepare_images(
     input_path: Path,
     image_format_reader: Type[ImageFormatReader],
