@@ -14,7 +14,7 @@ from src.secondary_adapters.video_processors import FFmpegVP
 
 ### S3 env vars
 S3_INPUT_BUCKET_ENV_VAR = "S3_INPUT_BUCKET"
-S3_AUX_BUCKET_ENV_VAR = "S3_AUX_BUCKET"
+S3_AUX_BUCKET_ENV_VAR = "S3_TO_BE_APPENDED_BUCKET"
 S3_MOVIE_KEY_ENV_VAR = "S3_MOVIE_KEY"
 
 ### EventBridge env vars

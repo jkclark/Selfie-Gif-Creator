@@ -34,4 +34,4 @@ COPY ./OpenSans-Regular.ttf ${LAMBDA_TASK_ROOT}/OpenSans-Regular.ttf
 # Copy code
 COPY ./src ${LAMBDA_TASK_ROOT}/src
 
-CMD [ "src.primary_adapters.lambda_function.lambda_handler" ]
+CMD [ "src.primary_adapters.process_and_append_images_lambda.lambda_handler" ]
