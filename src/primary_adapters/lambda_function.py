@@ -1,6 +1,7 @@
 """AWS Lambda function for processing new images and appending them to a movie."""
 import json
 import os
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import unquote_plus
@@ -8,7 +9,6 @@ from urllib.parse import unquote_plus
 import boto3
 
 from src.core.prepare_images_and_make_movie import prepare_images_and_append_to_movie
-from src.secondary_adapters.image_format_readers import WhatImageIFR
 from src.secondary_adapters.image_manipulators import PillowImageManipulator
 from src.secondary_adapters.video_processors import FFmpegVP
 
@@ -41,14 +41,27 @@ def lambda_handler(event, context):
     """Main driver code for the Lambda function."""
     input_bucket = s3.Bucket(os.environ[S3_INPUT_BUCKET_ENV_VAR])
     aux_bucket = s3.Bucket(os.environ[S3_AUX_BUCKET_ENV_VAR])
+    num_expected_images = event["expectedNumImages"]
 
     # If this is a cloud environment
     if not is_dev_environment():
-        if not do_lambda_setup(input_bucket, aux_bucket):
+        if not ready_check_poll(input_bucket, num_expected_images, 5, 12):
+            # Schedule this Lambda function to be invoked again
+            # AWS EventBridge limits us to minute-level precision, so the following
+            # results in the function being scheduled to run after the next whole
+            # minute.
+            next_invocation_date = datetime.now() + timedelta(seconds=120)
+            schedule_lambda_function(next_invocation_date)
+
             return {
                 "statusCode": 200,
-                "body": json.dumps("No images/uploads not finished!"),
+                "body": json.dumps(
+                    f"Scheduled Lambda function for invocation at {next_invocation_date.strftime('%Y-%m-%d %H:%M:%S')}."
+                ),
             }
+
+        # Good to go
+        set_up_filesystem_and_download_inputs(input_bucket, aux_bucket)
 
     # Set image manipulator font path
     PillowImageManipulator.font_path = os.environ[FONT_FILE_PATH_ENV_VAR]
@@ -66,58 +79,37 @@ def lambda_handler(event, context):
     if not is_dev_environment():
         do_lambda_teardown(input_bucket, aux_bucket)
 
-    return {"statusCode": 200, "body": json.dumps("Appended image(s) to movie!")}
+    return {
+        "statusCode": 200,
+        "body": json.dumps(f"Appended {num_expected_images} image(s) to movie!"),
+    }
 
 
-def do_lambda_setup(input_bucket, aux_bucket) -> bool:
-    """Do everything necessary before appending image(s) to a movie.
+def ready_check_poll(
+    bucket, num_expected_images: int, period: int, max_retries: int
+) -> bool:
+    """Poll the input bucket to see if all images are ready for processing.
 
-    This function checks that the input-image bucket is not empty and that uploads are finished,
-    and then downloads input images to the local filesystem.
+    Count the number of objects in the input bucket every {period} seconds. Return True if the
+    bucket has the expected number of images. After {max_retries} retries, return False.
 
-    Returns True if we should continue with processing the images and appending to the movie,
-    False otherwise.
+    If there are more images in the bucket than expected, this function raises an exception.
     """
-    # If there are any objects in the input bucket
-    if bucket_has_any_objects(input_bucket):
-        if uploads_are_finished(input_bucket, timedelta(seconds=5)):
-            print("Uploads are finished!")
+    for _ in range(max_retries):
+        num_actual_images = len([obj for obj in bucket.objects.all()])
 
-            # Create directories in Lambda's local filesystem
-            # NOTE: This needs to be done here and cannot be done beforehand
-            #       at build time because AWS clears out the /tmp directory
-            #       before each Lambda function invocation. See
-            #       https://stackoverflow.com/a/73642693/3801865
-            create_image_folders(
-                os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR],
-                os.environ[TEMP_FOLDER_PATH_ENV_VAR],
-            )
-
-            # Download input images
-            download_s3_bucket_contents(
-                input_bucket, Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
-            )
-            # Download input movie
-            aux_bucket.download_file(
-                os.environ[S3_MOVIE_KEY_ENV_VAR], os.environ[MOVIE_PATH_ENV_VAR]
-            )
-
+        if num_actual_images == num_expected_images:
             return True
 
-        print("Downloads are not finished yet!")
+        if num_actual_images > num_expected_images:
+            raise TooManyBucketObjectsError(num_expected_images, num_actual_images)
 
-        # Schedule this Lambda function to be invoked again
-        # AWS EventBridge limits us to minute-level precision, so the following
-        # results in the function being scheduled to run after the next whole
-        # minute.
-        schedule_lambda_function(datetime.now() + timedelta(seconds=120))
+        print(
+            f"Bucket has {num_actual_images} images. Expected: {num_expected_images}. Retrying in {period} seconds."
+        )
 
-        # Exit early
-        return False
+        time.sleep(period)
 
-    print("No objects in input bucket!")
-
-    # Exit early
     return False
 
 
@@ -132,17 +124,25 @@ def do_lambda_teardown(input_bucket, aux_bucket) -> None:
     input_bucket.objects.delete()
 
 
-def bucket_has_any_objects(bucket) -> bool:
-    """Return True if the given bucket has any objects in it, False otherwise."""
-    return bool(list(bucket.objects.limit(count=1)))
+def set_up_filesystem_and_download_inputs(input_bucket, aux_bucket) -> None:
+    """Set up the filesystem and download the input images and movie."""
+    # Create directories in Lambda's local filesystem
+    # NOTE: This needs to be done here and cannot be done beforehand
+    #       at build time because AWS clears out the /tmp directory
+    #       before each Lambda function invocation. See
+    #       https://stackoverflow.com/a/73642693/3801865
+    create_image_folders(
+        os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR],
+        os.environ[TEMP_FOLDER_PATH_ENV_VAR],
+    )
 
-
-def uploads_are_finished(bucket, grace_period: timedelta) -> bool:
-    """Return True if the most recent upload happened longer ago than (grace period)."""
-    most_recent_upload_time = get_most_recent_upload_time(bucket)
-    return (
-        datetime.now(most_recent_upload_time.tzinfo) - most_recent_upload_time
-        > grace_period
+    # Download input images
+    download_s3_bucket_contents(
+        input_bucket, Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
+    )
+    # Download input movie
+    aux_bucket.download_file(
+        os.environ[S3_MOVIE_KEY_ENV_VAR], os.environ[MOVIE_PATH_ENV_VAR]
     )
 
 
@@ -208,3 +208,12 @@ def get_most_recent_upload_time(bucket) -> datetime:
 def is_dev_environment() -> bool:
     """Return True if this is a local environment, False otherwise."""
     return os.environ["ENV"] == "dev"
+
+
+class TooManyBucketObjectsError(Exception):
+    """Exception raised when there are more images than expected in the input bucket."""
+
+    def __init__(self, num_expected_images: int, num_actual_images: int) -> None:
+        super().__init__(
+            f"More images than expected in input bucket. Expected/Actual: {num_expected_images}/{num_actual_images}"
+        )
