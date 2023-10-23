@@ -26,4 +26,12 @@ def lambda_handler(event, context):
     # Upload to S3 with date as key
     output_bucket.upload_file("/tmp/image.jpg", f"{image_date}.jpg")
 
+    # Delete original image from S3
+    input_bucket.delete_objects(
+        Delete={
+            "Objects": [{"Key": event["Records"][0]["s3"]["object"]["key"]}],
+            "Quiet": True,
+        }
+    )
+
     return {"statusCode": 200, "body": json.dumps("Hello from Lambda!")}
