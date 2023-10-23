@@ -11,7 +11,8 @@ from src.secondary_adapters.image_format_readers import WhatImageIFR
 def lambda_handler(event, context):
     s3 = boto3.resource("s3")
     input_bucket = s3.Bucket(os.environ["S3_TO_BE_PREPARED_BUCKET"])
-    output_bucket = s3.Bucket(os.environ["S3_TO_BE_APPENDED_BUCKET"])
+    to_be_appended_bucket = s3.Bucket(os.environ["S3_TO_BE_APPENDED_BUCKET"])
+    permanent_images_bucket = s3.Bucket(os.environ["S3_PERMANENT_IMAGES_BUCKET"])
 
     # Download image from S3
     input_bucket.download_file(
@@ -24,7 +25,8 @@ def lambda_handler(event, context):
     )
 
     # Upload to S3 with date as key
-    output_bucket.upload_file("/tmp/image.jpg", f"{image_date}.jpg")
+    to_be_appended_bucket.upload_file("/tmp/image.jpg", f"{image_date}.jpg")
+    permanent_images_bucket.upload_file("/tmp/image.jpg", f"{image_date}.jpg")
 
     # Delete original image from S3
     input_bucket.delete_objects(
