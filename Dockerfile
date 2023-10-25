@@ -26,7 +26,7 @@ RUN pip install boto3==1.28.62 botocore==1.31.62 --target /opt/python/lib/python
 COPY poetry.lock pyproject.toml ${LAMBDA_TASK_ROOT}/
 
 RUN poetry config virtualenvs.create false \
-  && poetry install --only main --no-interaction --no-ansi
+  && poetry install --without dev --no-interaction --no-ansi
 
 # Copy font file
 COPY ./OpenSans-Regular.ttf ${LAMBDA_TASK_ROOT}/OpenSans-Regular.ttf
