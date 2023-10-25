@@ -36,8 +36,8 @@ until [ "`docker inspect -f {{.State.Running}} $container_name`"=="true" ]; do
 done;
 
 # Send GET request to trigger Lambda function
-# NOTE: expectedNumImages doesn't matter when run locally
-curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"expectedNumImages": -1}'
+# NOTE: numExpectedImages doesn't matter when run locally
+curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"numExpectedImages": -1}'
 
 # Copy output movie from Docker container to local
 docker cp $container_name:${MOVIE_PATH} $3

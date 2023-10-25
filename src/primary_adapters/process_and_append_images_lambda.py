@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Dict
 from urllib.parse import unquote_plus
 
 import boto3
@@ -13,8 +14,8 @@ from src.secondary_adapters.image_manipulators import PillowImageManipulator
 from src.secondary_adapters.video_processors import FFmpegVP
 
 ### S3 env vars
-S3_INPUT_BUCKET_ENV_VAR = "S3_INPUT_BUCKET"
-S3_AUX_BUCKET_ENV_VAR = "S3_TO_BE_APPENDED_BUCKET"
+S3_TO_BE_APPENDED_BUCKET_ENV_VAR = "S3_TO_BE_APPENDED_BUCKET"
+S3_MOVIE_BUCKET_ENV_VAR = "S3_MOVIE_BUCKET"
 S3_MOVIE_KEY_ENV_VAR = "S3_MOVIE_KEY"
 
 ### EventBridge env vars
@@ -36,32 +37,44 @@ FONT_FILE_PATH_ENV_VAR = "FONT_FILE_PATH"
 
 s3 = boto3.resource("s3")
 
+MAX_RETRIES = 3
+
 
 def lambda_handler(event, context):
     """Main driver code for the Lambda function."""
-    input_bucket = s3.Bucket(os.environ[S3_INPUT_BUCKET_ENV_VAR])
-    aux_bucket = s3.Bucket(os.environ[S3_AUX_BUCKET_ENV_VAR])
-    num_expected_images = event["expectedNumImages"]
+    input_bucket = s3.Bucket(os.environ[S3_TO_BE_APPENDED_BUCKET_ENV_VAR])
+    movie_bucket = s3.Bucket(os.environ[S3_MOVIE_BUCKET_ENV_VAR])
+    num_expected_images = event["numExpectedImages"]
 
     # If this is a cloud environment
     if not is_dev_environment():
         if not ready_check_poll(input_bucket, num_expected_images, 5, 12):
-            # Schedule this Lambda function to be invoked again
-            # AWS EventBridge limits us to minute-level precision, so the following
-            # results in the function being scheduled to run after the next whole
-            # minute.
-            next_invocation_date = datetime.now() + timedelta(seconds=120)
-            schedule_lambda_function(next_invocation_date)
+            if (retry_count := event.get("retryCount", 0)) < MAX_RETRIES:
+                # Schedule this Lambda function to be invoked again
+                # AWS EventBridge limits us to minute-level precision, so the following
+                # results in the function being scheduled to run after the next whole
+                # minute.
+                next_invocation_date = datetime.now() + timedelta(seconds=120)
+                schedule_lambda_function(
+                    next_invocation_date,
+                    {
+                        "numExpectedImages": num_expected_images,
+                        "retryCount": retry_count + 1,
+                    },
+                )
 
-            return {
-                "statusCode": 200,
-                "body": json.dumps(
-                    f"Scheduled Lambda function for invocation at {next_invocation_date.strftime('%Y-%m-%d %H:%M:%S')}."
-                ),
-            }
+                return {
+                    "statusCode": 200,
+                    "body": json.dumps(
+                        f"Scheduled Lambda function for invocation at {next_invocation_date.strftime('%Y-%m-%d %H:%M:%S')}."
+                    ),
+                }
+
+            else:
+                raise MaxRetriesReachedError
 
         # Good to go
-        set_up_filesystem_and_download_inputs(input_bucket, aux_bucket)
+        set_up_filesystem_and_download_inputs(input_bucket, movie_bucket)
 
     # Set image manipulator font path
     PillowImageManipulator.font_path = os.environ[FONT_FILE_PATH_ENV_VAR]
@@ -77,7 +90,7 @@ def lambda_handler(event, context):
     )
 
     if not is_dev_environment():
-        do_lambda_teardown(input_bucket, aux_bucket)
+        do_lambda_teardown(input_bucket, movie_bucket)
 
     return {
         "statusCode": 200,
@@ -113,10 +126,10 @@ def ready_check_poll(
     return False
 
 
-def do_lambda_teardown(input_bucket, aux_bucket) -> None:
+def do_lambda_teardown(input_bucket, movie_bucket) -> None:
     """This function uploads the output movie to S3 and deletes all input images."""
     # Upload output movie to S3
-    aux_bucket.upload_file(
+    movie_bucket.upload_file(
         os.environ[MOVIE_PATH_ENV_VAR], os.environ[S3_MOVIE_KEY_ENV_VAR]
     )
 
@@ -124,7 +137,7 @@ def do_lambda_teardown(input_bucket, aux_bucket) -> None:
     input_bucket.objects.delete()
 
 
-def set_up_filesystem_and_download_inputs(input_bucket, aux_bucket) -> None:
+def set_up_filesystem_and_download_inputs(input_bucket, movie_bucket) -> None:
     """Set up the filesystem and download the input images and movie."""
     # Create directories in Lambda's local filesystem
     # NOTE: This needs to be done here and cannot be done beforehand
@@ -141,7 +154,7 @@ def set_up_filesystem_and_download_inputs(input_bucket, aux_bucket) -> None:
         input_bucket, Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
     )
     # Download input movie
-    aux_bucket.download_file(
+    movie_bucket.download_file(
         os.environ[S3_MOVIE_KEY_ENV_VAR], os.environ[MOVIE_PATH_ENV_VAR]
     )
 
@@ -161,7 +174,7 @@ def download_s3_bucket_contents(bucket, dest_folder: Path) -> None:
         )
 
 
-def schedule_lambda_function(invocation_time: datetime) -> None:
+def schedule_lambda_function(invocation_time: datetime, lambda_args: Dict) -> None:
     """Schedule this Lambda function to be invoked at the given time.
 
     If the schedule exists already, this function does nothing.
@@ -180,6 +193,7 @@ def schedule_lambda_function(invocation_time: datetime) -> None:
             Target={
                 "Arn": os.environ[EB_TARGET_ARN_ENV_VAR],
                 "RoleArn": os.environ[EB_ROLE_ARN_ENV_VAR],
+                "Input": json.dumps(lambda_args),
             },
         )
     except scheduler.exceptions.ConflictException:
@@ -217,3 +231,7 @@ class TooManyBucketObjectsError(Exception):
         super().__init__(
             f"More images than expected in input bucket. Expected/Actual: {num_expected_images}/{num_actual_images}"
         )
+
+
+class MaxRetriesReachedError(Exception):
+    """Exception raised when the maximum number of retries has been reached."""
