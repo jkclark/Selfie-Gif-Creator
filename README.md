@@ -6,16 +6,25 @@ I take a selfie of myself every day at 8:30pm. I write the date on each one and 
 
 ### Architecture
 
-This application relies on Docker to make sure that the execution environment is consistent. The Docker image used is built from an AWS Lambda Python base image. When code is changed, a new image is uploaded to AWS ECR, and then the Lambda function is updated using the new image.
+![Architecture diagram](architecture_diagram.png)
 
-There are two S3 buckets configured for this project. One is an input bucket, and the other is an output (called "aux" in this project) bucket. The Lambda function is set up to react to any upload event to the input S3 bucket. When a new photo is uploaded to the S3 bucket, the Lambda function is invoked. The Lambda function checks to see:
+The infrastructure is comprised of 4 S3 buckets and 2 Lambda functions as listed below:
 
-- there are objects in the input-image bucket
-- the most recently uploaded object in the bucket is at least 5 seconds old
+S3 buckets:
 
-The reason for this is that the Lambda function is invoked every time a new object is uploaded to the bucket. This means that if 1,000 images are uploaded at the same time, there will be 1,000 invocations of the function. We don't want to move to processing the images or appending to the movie while images are still being uploaded. If the most recent upload is newer than 5 seconds old, we schedule an invocation of the Lambda function using AWS EventBridge Scheduler. This process continues in a loop until the most recently uploaded object is older than 5 seconds.
+1. To be prepared
+2. To be appended
+3. Permanent images
+4. Movies
 
-At this point, the function downloads all images from the input-image bucket, downloads the input movie from the aux bucket, updates the movie with the new images, and uploads the new movie to the aux bucket.
+Lambda functions:
+
+1. Preprocess (uploaded as zip)
+2. Process & append (Docker image stored in ECR)
+
+The "driver code" (web app, script, user in AWS console, etc.) uploads images to bucket 1. These are images that are to be appended to a movie. Lambda 1 is invoked once per image, as the Lambda function is triggered by each upload to bucket 1. It downloads the image, reads the date EXIF metadata, and then uploads the image to both buckets 2 and 3 with the date as the key.
+
+The driver code also invokes Lambda 2 at the same time as uploading the images. The driver code passes as part of the Lambda payload the number of images that were just uploaded to bucket 1. Lambda 2 checks that bucket 2 has that many images in it. If it does, it writes the date on each one (taken from object key) and appends them to the movie stored in bucket 4. If it doesn't, it polls bucket 2 for up to 1 minute. If at any point the correct number of images are present, it goes ahead with processing/appending. After one minute of polling, an EventBridge schedule is creating to re-invoke the function in 2 minutes. This new invocation will also contain a "retry count" (set to 1), which is used to cap the number of times that the function is retried. Each retry increases the retry count. After the maximum number of retries, an error is thrown.
 
 ### Local setup
 
