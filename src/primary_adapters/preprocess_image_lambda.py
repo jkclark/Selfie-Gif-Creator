@@ -14,10 +14,11 @@ def lambda_handler(event, context):
     to_be_appended_bucket = s3.Bucket(os.environ["S3_TO_BE_APPENDED_BUCKET"])
     permanent_images_bucket = s3.Bucket(os.environ["S3_PERMANENT_IMAGES_BUCKET"])
 
+    obj_key = event["Records"][0]["s3"]["object"]["key"]
+    prefix = "/".join(obj_key.split("/")[:-1])
+
     # Download image from S3
-    input_bucket.download_file(
-        event["Records"][0]["s3"]["object"]["key"], "/tmp/image.jpg"
-    )
+    input_bucket.download_file(obj_key, "/tmp/image.jpg")
 
     # Read date
     image_date = get_image_date("/tmp/image.jpg", WhatImageIFR).strftime(
@@ -25,8 +26,8 @@ def lambda_handler(event, context):
     )
 
     # Upload to S3 with date as key
-    to_be_appended_bucket.upload_file("/tmp/image.jpg", f"{image_date}.jpg")
-    permanent_images_bucket.upload_file("/tmp/image.jpg", f"{image_date}.jpg")
+    to_be_appended_bucket.upload_file("/tmp/image.jpg", f"{prefix}/{image_date}.jpg")
+    permanent_images_bucket.upload_file("/tmp/image.jpg", f"{prefix}/{image_date}.jpg")
 
     # Delete original image from S3
     input_bucket.delete_objects(
