@@ -1,9 +1,9 @@
 #!/bin/bash
-# This script is useful for testing the Lambda function (and application
-# code) locally. It runs the Lambda function in a Docker container, copies
-# the input image and movie from the local machine to the container, and
-# sends a GET request to trigger the function. The output movie is then
-# copied from the Docker container to the local machine.
+# This script is useful for testing the prepare-and-append Lambda function (and
+# application code) locally. It runs the Lambda function in a Docker container,
+# copies the input image and movie from the local machine to the container, and
+# sends a GET request to trigger the function. The output movie is then copied
+# from the Docker container to the local machine.
 #
 # Args:
 # $1: local input image directory path

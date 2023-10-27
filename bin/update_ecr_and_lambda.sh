@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script builds the Docker image, deploys it to Amazon ECR, and updates
-# the Lambda function to use the latest version of the image.
+# the prepare-and-append Lambda function to use the latest version of the image.
 #
 # Typically, this script shouldn't be run manually. Deployments to ECR and
 # Lambda should be done automatically via GitHub Actions. However, it is useful
