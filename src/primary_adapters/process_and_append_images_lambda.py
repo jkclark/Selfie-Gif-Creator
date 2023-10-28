@@ -5,7 +5,6 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict
-from urllib.parse import unquote_plus
 
 import boto3
 
@@ -45,10 +44,11 @@ def lambda_handler(event, context):
     input_bucket = s3.Bucket(os.environ[S3_TO_BE_APPENDED_BUCKET_ENV_VAR])
     movie_bucket = s3.Bucket(os.environ[S3_MOVIE_BUCKET_ENV_VAR])
     num_expected_images = event["numExpectedImages"]
+    prefix = event["prefix"]
 
     # If this is a cloud environment
     if not is_dev_environment():
-        if not ready_check_poll(input_bucket, num_expected_images, 5, 12):
+        if not ready_check_poll(input_bucket, prefix, num_expected_images, 5, 12):
             if (retry_count := event.get("retryCount", 0)) < MAX_RETRIES:
                 # Schedule this Lambda function to be invoked again
                 # AWS EventBridge limits us to minute-level precision, so the following
@@ -60,6 +60,7 @@ def lambda_handler(event, context):
                     {
                         "numExpectedImages": num_expected_images,
                         "retryCount": retry_count + 1,
+                        "prefix": prefix,
                     },
                 )
 
@@ -74,7 +75,7 @@ def lambda_handler(event, context):
                 raise MaxRetriesReachedError
 
         # Good to go
-        set_up_filesystem_and_download_inputs(input_bucket, movie_bucket)
+        set_up_filesystem_and_download_inputs(input_bucket, prefix, movie_bucket)
 
     # Set image manipulator font path
     PillowImageManipulator.font_path = os.environ[FONT_FILE_PATH_ENV_VAR]
@@ -90,7 +91,7 @@ def lambda_handler(event, context):
     )
 
     if not is_dev_environment():
-        do_lambda_teardown(input_bucket, movie_bucket)
+        do_lambda_teardown(input_bucket, prefix, movie_bucket)
 
     return {
         "statusCode": 200,
@@ -99,7 +100,7 @@ def lambda_handler(event, context):
 
 
 def ready_check_poll(
-    bucket, num_expected_images: int, period: int, max_retries: int
+    bucket, prefix: str, num_expected_images: int, period: int, max_retries: int
 ) -> bool:
     """Poll the input bucket to see if all images are ready for processing.
 
@@ -109,7 +110,7 @@ def ready_check_poll(
     If there are more images in the bucket than expected, this function raises an exception.
     """
     for _ in range(max_retries):
-        num_actual_images = len([obj for obj in bucket.objects.all()])
+        num_actual_images = len([obj for obj in bucket.objects.filter(Prefix=prefix)])
 
         if num_actual_images == num_expected_images:
             return True
@@ -126,18 +127,20 @@ def ready_check_poll(
     return False
 
 
-def do_lambda_teardown(input_bucket, movie_bucket) -> None:
+def do_lambda_teardown(input_bucket, prefix: str, movie_bucket) -> None:
     """This function uploads the output movie to S3 and deletes all input images."""
     # Upload output movie to S3
     movie_bucket.upload_file(
-        os.environ[MOVIE_PATH_ENV_VAR], os.environ[S3_MOVIE_KEY_ENV_VAR]
+        os.environ[MOVIE_PATH_ENV_VAR], f"{prefix}/{os.environ[S3_MOVIE_KEY_ENV_VAR]}"
     )
 
     # Delete all input images
-    input_bucket.objects.delete()
+    input_bucket.objects.filter(Prefix=prefix).delete()
 
 
-def set_up_filesystem_and_download_inputs(input_bucket, movie_bucket) -> None:
+def set_up_filesystem_and_download_inputs(
+    input_bucket, prefix: str, movie_bucket
+) -> None:
     """Set up the filesystem and download the input images and movie."""
     # Create directories in Lambda's local filesystem
     # NOTE: This needs to be done here and cannot be done beforehand
@@ -151,11 +154,11 @@ def set_up_filesystem_and_download_inputs(input_bucket, movie_bucket) -> None:
 
     # Download input images
     download_s3_bucket_contents(
-        input_bucket, Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
+        input_bucket, prefix, Path(os.environ[INPUT_IMAGE_FOLDER_PATH_ENV_VAR])
     )
     # Download input movie
     movie_bucket.download_file(
-        os.environ[S3_MOVIE_KEY_ENV_VAR], os.environ[MOVIE_PATH_ENV_VAR]
+        f"{prefix}/{os.environ[S3_MOVIE_KEY_ENV_VAR]}", os.environ[MOVIE_PATH_ENV_VAR]
     )
 
 
@@ -165,12 +168,12 @@ def create_image_folders(input_image_path: str, temp_image_path: str):
     Path(temp_image_path).mkdir(parents=True, exist_ok=True)
 
 
-def download_s3_bucket_contents(bucket, dest_folder: Path) -> None:
+def download_s3_bucket_contents(bucket, prefix: str, dest_folder: Path) -> None:
     """Download all objects from the given bucket to the local filesystem."""
-    for obj in bucket.objects.all():
+    for obj in bucket.objects.filter(Prefix=prefix):
         bucket.download_file(
             obj.key,
-            dest_folder / unquote_plus(obj.key),
+            dest_folder / obj.key.split("/")[-1],
         )
 
 
