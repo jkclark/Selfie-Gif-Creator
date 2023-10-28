@@ -11,6 +11,12 @@
 # $1: AWS account ID
 # $2: AWS region
 
+# Check that arguments are provided
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <aws_account_id> <aws_region>"
+    exit 1
+fi
+
 # Build
 docker build --platform linux/amd64 -t selfie-movie-maker:latest .
 

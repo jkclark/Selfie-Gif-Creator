@@ -12,6 +12,12 @@
 # $1: AWS account ID
 # $2: AWS region
 
+# Check that arguments are provided
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <aws_account_id> <aws_region>"
+    exit 1
+fi
+
 # Move to site-packages and zip dependencies
 cd ./.venv/lib/python3.10/site-packages && zip -r ../../../../deployment.zip .
 
