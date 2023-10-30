@@ -5,8 +5,8 @@ from typing import Type, Union
 from src.core.make_movie import append_images_to_movie, make_movie_from_scratch
 from src.core.prepare_images import prepare_dated_images, prepare_images
 from src.ports.image_format_reader import ImageFormatReader
+from src.ports.image_manipulator import ImageManipulator
 from src.ports.video_processor import VideoProcessor
-from src.secondary_adapters.image_manipulators import ImageManipulator
 
 
 def prepare_images_and_make_movie(

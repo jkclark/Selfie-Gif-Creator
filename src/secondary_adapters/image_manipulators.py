@@ -1,82 +1,26 @@
-"""TODO"""
-from abc import ABC
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-
-class ImageManipulator(ABC):
-    """TODO"""
-
-    # This must be set before instantiating the class
-    font_path = None
-
-    def __init__(self, image_path: Path):
-        """TODO"""
-        self.image_path = image_path
-        self.opened = False
-
-    def __enter__(self):
-        """TODO"""
-        self.opened = True
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """TODO"""
-        self.opened = False
-
-    @staticmethod
-    def assert_opened(inner_func):
-        """TODO"""
-
-        def wrapper(*args, **kwargs):
-            if not args[0].opened:
-                raise ImageManipulatorNotOpenedError()
-            return inner_func(*args, **kwargs)
-
-        return wrapper
-
-    @assert_opened
-    def reorient_image(self):
-        """Rotate the image to the correct orientation."""
-        raise NotImplementedError
-
-    @assert_opened
-    def resize_image(self, width: int, height: int):
-        """TODO"""
-        raise NotImplementedError
-
-    @assert_opened
-    def write_text_on_image(self, text: str, x_coord: int, y_coord: int):
-        """TODO"""
-        # NOTE: This check is duplicated -- subclasses write the same code.
-        #       How can we have this code in one place?
-        if not self.font_path:
-            raise ImageManipulatorFontPathNotSetError()
-
-        raise NotImplementedError
-
-    @assert_opened
-    def save_image_as_jpeg(self, output_path: Path):
-        """TODO"""
-        raise NotImplementedError
+from src.ports.image_manipulator import (
+    ImageManipulator,
+    ImageManipulatorFontPathNotSetError,
+)
 
 
 class PillowImageManipulator(ImageManipulator):
-    """TODO"""
+    """An image manipulator that uses Pillow."""
 
     def __init__(self, image_path: Path):
-        """TODO"""
         super().__init__(image_path)
         self._image = None
 
     def __enter__(self):
-        """TODO"""
         super().__enter__()
         self._image = Image.open(self.image_path)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        """TODO"""
         # TODO: What to do with these 3 args?
         self._image.close()
         super().__exit__(exc_type, exc_value, traceback)
@@ -94,12 +38,12 @@ class PillowImageManipulator(ImageManipulator):
 
     @ImageManipulator.assert_opened
     def resize_image(self, width: int, height: int):
-        """TODO"""
+        """Resize the image to the given width and height."""
         self._image = self._image.resize((width, height))
 
     @ImageManipulator.assert_opened
     def write_text_on_image(self, text: str, x_coord: int, y_coord: int):
-        """TODO"""
+        """Write the given text on the image at the given coordinates."""
         if not self.font_path:
             raise ImageManipulatorFontPathNotSetError()
 
@@ -118,22 +62,6 @@ class PillowImageManipulator(ImageManipulator):
 
     @ImageManipulator.assert_opened
     def save_image_as_jpeg(self, output_path: Path):
-        """TODO"""
-        self._image.convert("RGB")  # TODO: Is this necessary?
+        """Save the image as a jpeg."""
+        self._image.convert("RGB")
         self._image.save(output_path, "jpeg")
-
-
-class ImageManipulatorNotOpenedError(Exception):
-    """TODO"""
-
-    def __init__(self):
-        """TODO"""
-        super().__init__("ImageManipulator not opened")
-
-
-class ImageManipulatorFontPathNotSetError(Exception):
-    """TODO"""
-
-    def __init__(self):
-        """TODO"""
-        super().__init__("ImageManipulator.font_path not set")

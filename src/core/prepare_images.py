@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Generator, Type
 
 from src.ports.image_format_reader import ImageFormatReader
-from src.secondary_adapters.image_manipulators import ImageManipulator
+from src.ports.image_manipulator import ImageManipulator
 from src.secondary_adapters.image_metadata_readers import (
     HEICMetadataReader,
     JPEGMetadataReader,
