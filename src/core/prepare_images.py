@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Generator, Type
 
-from src.secondary_adapters.image_format_readers import ImageFormatReader
+from src.ports.image_format_reader import ImageFormatReader
 from src.secondary_adapters.image_manipulators import ImageManipulator
 from src.secondary_adapters.image_metadata_readers import (
     HEICMetadataReader,

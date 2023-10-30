@@ -1,26 +1,16 @@
-"""TODO"""
-from abc import ABC, abstractmethod
 from pathlib import Path
 
 import whatimage
 
-
-class ImageFormatReader(ABC):
-    """TODO"""
-
-    @staticmethod
-    @abstractmethod
-    def get_image_format(image_path: Path) -> str:
-        """TODO"""
-        raise NotImplementedError
+from src.ports.image_format_reader import ImageFormatReader
 
 
 class WhatImageIFR(ImageFormatReader):
-    """TODO"""
+    """An image-format reader that uses the whatimage library."""
 
     @staticmethod
     def get_image_format(image_path: Path) -> str:
-        """TODO"""
+        """Return the image format of an image."""
         with open(image_path, "rb") as image_fp:
             image_contents = image_fp.read()
 
