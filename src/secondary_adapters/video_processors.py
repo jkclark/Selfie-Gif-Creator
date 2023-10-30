@@ -1,33 +1,14 @@
 """TODO"""
 import os
 import subprocess
-from abc import ABC, abstractmethod
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-
-class VideoProcessor(ABC):
-    """TODO"""
-
-    @staticmethod
-    @abstractmethod
-    def create_movie_from_images(images_path: Path, output_path: Path) -> None:
-        """TODO"""
-        raise NotImplementedError
-
-    @staticmethod
-    @abstractmethod
-    def append_images_to_movie(
-        images_path: Path,
-        movie_path: Path,
-        output_path: Path,
-    ) -> None:
-        """TODO"""
-        raise NotImplementedError
+from src.ports.video_processor import VideoProcessor
 
 
 class FFmpegVP(VideoProcessor):
-    """TODO
+    """A video processor that uses FFmpeg.
 
     This link is a concise guide to the ffmpeg flags:
     https://gist.github.com/tayvano/6e2d456a9897f55025e25035478a3a50
@@ -37,7 +18,7 @@ class FFmpegVP(VideoProcessor):
 
     @staticmethod
     def create_movie_from_images(images_path: Path, output_path: Path) -> None:
-        """TODO
+        """Create a movie from a folder of images.
 
         output_path should specify .mp4
 

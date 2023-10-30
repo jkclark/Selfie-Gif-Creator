@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import Type, Union
 
-from src.secondary_adapters.video_processors import VideoProcessor
+from src.ports.video_processor import VideoProcessor
 
 
 def make_movie_from_scratch(
