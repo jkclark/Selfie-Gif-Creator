@@ -1,6 +1,5 @@
 """This file contains the secondary adapters for reading image metadata."""
 import io
-from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
 
@@ -9,15 +8,7 @@ import pyheif
 from PIL import Image
 from PIL.ExifTags import TAGS
 
-
-class ImageMetadataReader(ABC):
-    """An ABC for image metadata readers."""
-
-    @staticmethod
-    @abstractmethod
-    def get_image_date(image_path: Path) -> datetime:
-        """Get an image's date."""
-        raise NotImplementedError
+from src.ports.image_metadata_reader import ImageMetadataReader
 
 
 class HEICMetadataReader(ImageMetadataReader):
