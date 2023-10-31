@@ -5,7 +5,12 @@ import os
 import boto3
 
 from src.core.get_image_date import get_image_date
+from src.ports.supported_image_formats import SupportedImageFormat
 from src.secondary_adapters.image_format_readers import WhatImageIFR
+from src.secondary_adapters.image_metadata_readers import (
+    HEICMetadataReader,
+    JPEGMetadataReader,
+)
 
 
 def lambda_handler(event, context):
@@ -21,9 +26,13 @@ def lambda_handler(event, context):
     input_bucket.download_file(obj_key, "/tmp/image.jpg")
 
     # Read date
-    image_date = get_image_date("/tmp/image.jpg", WhatImageIFR).strftime(
-        "%Y_%m_%d_%H_%M_%S"
-    )
+    formats_to_metadata_readers = {
+        SupportedImageFormat.HEIC: HEICMetadataReader,
+        SupportedImageFormat.JPEG: JPEGMetadataReader,
+    }
+    image_date = get_image_date(
+        "/tmp/image.jpg", WhatImageIFR, formats_to_metadata_readers
+    ).strftime("%Y_%m_%d_%H_%M_%S")
 
     # Upload to S3 with date as key
     to_be_appended_bucket.upload_file("/tmp/image.jpg", f"{prefix}/{image_date}.jpg")

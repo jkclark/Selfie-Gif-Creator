@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 class ImageMetadataReader(ABC):
-    """An ABC for image metadata readers."""
+    """An ABC for a metadata reader for a specific image format."""
 
     @staticmethod
     @abstractmethod

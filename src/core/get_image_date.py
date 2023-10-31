@@ -1,40 +1,27 @@
 """A module for determining images' dates."""
 from datetime import datetime
 from pathlib import Path
-from typing import Type
+from typing import Dict, Type
 
 from src.ports.image_format_reader import ImageFormatReader
-from src.secondary_adapters.image_metadata_readers import (
-    HEICMetadataReader,
-    JPEGMetadataReader,
+from src.ports.image_metadata_reader import ImageMetadataReader
+from src.ports.supported_image_formats import (
+    SupportedImageFormat,
+    UnsupportedImageFormatError,
 )
-
-IMAGE_FORMAT_TO_METADATA_READER = {
-    "heic": HEICMetadataReader,
-    "jpeg": JPEGMetadataReader,
-}
 
 
 def get_image_date(
     image_path: Path,
     image_format_reader: Type[ImageFormatReader],
+    formats_to_metadata_readers: Dict[SupportedImageFormat, Type[ImageMetadataReader]],
 ) -> datetime:
     """Get an image's date."""
     # Get the image's format
     fmt = image_format_reader.get_image_format(image_path)
 
-    # Get appropriate metadata reader
-    try:
-        metadata_reader = IMAGE_FORMAT_TO_METADATA_READER[fmt]
-    except KeyError as key_error:
-        raise UnsupportedImageFormatError(fmt) from key_error
-
     # Return the image's date
-    return metadata_reader.get_image_date(image_path)
-
-
-class UnsupportedImageFormatError(Exception):
-    """An error thrown when an trying to operate on an image with an unsupported format."""
-
-    def __init__(self, fmt: str) -> None:
-        super().__init__(f"Unsupported image format: {fmt}")
+    try:
+        return formats_to_metadata_readers[fmt].get_image_date(image_path)
+    except KeyError:
+        raise UnsupportedImageFormatError(f"Unsupported image format: {fmt}")
