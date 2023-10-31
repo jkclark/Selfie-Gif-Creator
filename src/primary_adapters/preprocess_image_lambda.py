@@ -4,7 +4,7 @@ import os
 
 import boto3
 
-from src.core.prepare_images import get_image_date
+from src.core.get_image_date import get_image_date
 from src.secondary_adapters.image_format_readers import WhatImageIFR
 
 
