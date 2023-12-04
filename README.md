@@ -1,5 +1,7 @@
 # Selfie Movie Maker
 
+Update: I'm no longer working on this repository because I think that this use case has a better implementation as a mobile app. Some of this code might get used in that system, but until I start working on the app, I won't be contributing here.
+
 ### Overview
 
 I take a selfie of myself every day at 8:30pm. I write the date on each one and compile them into a movie so that I can see my life as a series of images. This app automates everything after taking the photo.
